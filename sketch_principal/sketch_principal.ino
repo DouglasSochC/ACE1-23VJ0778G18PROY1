@@ -1,8 +1,12 @@
 #include <Keypad.h>
 #include <EEPROM.h>
+#include <LiquidCrystal.h>
+#include <LedControl.h>
 #include "Estructuras_Auxiliares.h"
 
 // Pines
+LedControl matriz_driver = LedControl(51, 53, 52, 1);  // Matriz con driver
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7);                   // Pantalla LCD
 byte Fpines[4] = { 22, 23, 24, 25 };                                         // Pines para manejar las filas del teclado
 byte Cpines[4] = { 26, 27, 28 };                                             // Pines para manejar las columnas del teclado
 Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // Mapeo de los valores que se obtienen a traves del teclado
@@ -32,9 +36,18 @@ int estado_app = MENU;  // Indica el estado actual en el que esta el programa
 #define CLAVE_2 4  // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
 
 void setup() {
+  
   Serial.begin(9600);   // Inicializa la comunicacion con el virtual terminal
   Serial3.begin(9600);  // Inicializa la comunicacion con el segundo arduino
+  lcd.begin(16, 2);     // Inicializa el LCD
 
+  // Inicializando la matriz con driver
+  matriz_driver.shutdown(0, false);
+  matriz_driver.setIntensity(0, 8);
+  matriz_driver.clearDisplay(0);
+
+  // Mensaje inicial
+  imprimirMensajeInicial();
 
   // Reinicia el EEPROM cada vez que se ejecute el programa
   if (false) {
@@ -73,6 +86,10 @@ void loop() {
   //   case INICIO_SESION:
   //     break;
   // }
+
+  // char respuesta[2];
+  // Serial3.print("L1"); // Se envia un comando al arduino secundario
+  // Serial3.readBytes(respuesta, 2); // Se lee la respuesta del arduino secundario y se almacena en el char 'respuesta'
 }
 
 /***********************************/
@@ -304,6 +321,22 @@ void mostrarLogsEEPROMConsola() {
 /***********************************/
 /************** UTIL ***************/
 /***********************************/
+
+// Imprime el mensaje inicial en la pantalla LCD
+void imprimirMensajeInicial() {
+  lcd.clear();              // Se limpia el LCD
+  lcd.setCursor(1, 0);      // Se agrega al cursor para empezar a escribir en columna = 1, fila = 0
+  lcd.print("Bienvenido");  // Se imprime un texto
+
+  lcd.setCursor(0, 1);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("GRP 01   SEC B");  // Se imprime un texto
+
+  lcd.createChar(0, caracter_bluetooth);  // Se crea el caracter customizado
+  lcd.setCursor(0, 0);                    // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.write(byte(0));                     // Se escribe el caracter
+  lcd.setCursor(11, 0);                   // Se agrega al cursor para empezar a escribir en columna = 11, fila = 0
+  lcd.write(byte(0));                     // Se escribe el caracter
+}
 
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9]+
 bool validarTexto(String texto) {
