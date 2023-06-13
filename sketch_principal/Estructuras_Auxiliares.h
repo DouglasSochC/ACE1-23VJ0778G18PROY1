@@ -1,29 +1,18 @@
-byte caracter_bluetooth[8] = {
-  B00100,
-  B00110,
-  B10101,
-  B01110,
-  B01110,
-  B10101,
-  B00110,
-  B00100
-};
-
 // Estructura que almacena los eventos que ocurren en la app.
-// Tamanio de la estructura = 20 bytes
+// Tamanio de la estructura = 21 bytes
 struct S_Log {
-  short id = 0;                                                                                                               // 2 bytes
-  char descripcion[16] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };  // 16 bytes
-  int siguiente = -1;                                                                                                         // 2 bytes
+  short id = 0;                                                                                                                     // 2 bytes
+  char descripcion[17] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };  // 17 bytes
+  int siguiente = -1;                                                                                                               // 2 bytes
 };
 
 // Estructura que almacena la informacion de un usuario. 
-// Tamanio de la estructura = 28 bytes
+// Tamanio de la estructura = 37 bytes
 struct S_Usuario {
-  char nombre[12] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };         // 12 bytes
-  char contrasenia[12] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };    // 12 bytes
-  int num_celular = 0;                                                                                  // 2 bytes
-  int siguiente = -1;                                                                                   // 2 bytes
+  char nombre[13] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };         // 13 bytes
+  char contrasenia[13] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };    // 13 bytes
+  char num_celular[9] = { '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };                             // 9 bytes
+  int siguiente = -1;                                                                                         // 2 bytes
 };
 
 // Es una estructura auxiliar que ayuda a determinar en que posicion de la memoria EEPROM inicia la lectura de los datos del usuario y log.
