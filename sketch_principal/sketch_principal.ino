@@ -5,8 +5,8 @@
 #include "Estructuras_Auxiliares.h"
 
 // Pines
-LedControl matriz_driver = LedControl(51, 53, 52, 1);  // Matriz con driver
-LiquidCrystal lcd(2, 3, 4, 5, 6, 7);                   // Pantalla LCD
+LedControl matriz_driver = LedControl(51, 53, 52, 1);                        // Matriz con driver
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7);                                         // Pantalla LCD
 byte Fpines[4] = { 22, 23, 24, 25 };                                         // Pines para manejar las filas del teclado
 byte Cpines[4] = { 26, 27, 28 };                                             // Pines para manejar las columnas del teclado
 Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // Mapeo de los valores que se obtienen a traves del teclado
@@ -16,41 +16,30 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 #define PIN_IZQUIERDA 32                                                     // Pin para manejar el movimiento hacia la izquierda
 
 // Estados del programa
-#define MENU 0
-#define INICIO_SESION 1
-#define REGISTRO 2
-#define USER 3
-#define ADMIN 4
-#define ADDPRODUCTS 5
-#define BUYPRODUCTS 6
-#define CHANGEPRODUCTS 7
-#define M0 8
-#define M1 9
-#define M2 10
-#define M3 11
-#define VIEWSMACHINE 12
-int estado_app = MENU;  // Indica el estado actual en el que esta el programa
+#define SECUENCIA_INICIAL 0
+#define MENU_PRINCIPAL 1
+#define INICIO_SESION 2
+#define REGISTRO 3
+int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
-#define CLAVE_1 1  // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
-#define CLAVE_2 4  // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
+#define CLAVE_1 '2'  // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
+#define CLAVE_2 '9'  // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
 
 void setup() {
-  
+
   Serial.begin(9600);   // Inicializa la comunicacion con el virtual terminal
   Serial3.begin(9600);  // Inicializa la comunicacion con el segundo arduino
-  lcd.begin(16, 2);     // Inicializa el LCD
+  lcd.begin(16, 4);     // Inicializa el LCD
 
   // Inicializando la matriz con driver
   matriz_driver.shutdown(0, false);
   matriz_driver.setIntensity(0, 8);
   matriz_driver.clearDisplay(0);
 
-  // Mensaje inicial
-  imprimirMensajeInicial();
-
   // Reinicia el EEPROM cada vez que se ejecute el programa
   if (false) {
+
     S_Inicial ini;
     ini.ini_libre = sizeof(S_Inicial);
     EEPROM.put(0, ini);
@@ -58,17 +47,17 @@ void setup() {
     S_Usuario usu;
     strcpy(usu.nombre, "USU1");
     strcpy(usu.contrasenia, "11111");
-    usu.num_celular = 100;
+    strcpy(usu.num_celular, "12345678");
     guardarUsuario(usu);
 
     strcpy(usu.nombre, "USU2");
     strcpy(usu.contrasenia, "22222");
-    usu.num_celular = 125;
+    strcpy(usu.num_celular, "87654321");
     guardarUsuario(usu);
 
     strcpy(usu.nombre, "USU3");
     strcpy(usu.contrasenia, "33333");
-    usu.num_celular = 150;
+    strcpy(usu.num_celular, "45678123");
     guardarUsuario(usu);
 
     mostrarUsuariosEEPROMConsola();
@@ -76,16 +65,24 @@ void setup() {
 }
 
 void loop() {
-  char llave = teclado.getKey();
-  if (llave != NO_KEY) {
-    Serial.println(llave);
-  }
-  // switch(estado_app){
-  //   case MENU:
-  //     break;
-  //   case INICIO_SESION:
-  //     break;
+  // char llave = teclado.getKey();
+  // if (llave != NO_KEY) {
+  //   Serial.println(llave);
   // }
+  switch (estado_app) {
+    case SECUENCIA_INICIAL:
+      imprimirMensajeInicial(0);
+      delay(500);
+      imprimirMensajeInicial(-1);
+      delay(500);
+      estado_app = MENU_PRINCIPAL;
+      break;
+    case MENU_PRINCIPAL:
+      imprimirMenuPrincipal();
+      break;
+    case INICIO_SESION:
+      break;
+  }
 
   // char respuesta[2];
   // Serial3.print("L1"); // Se envia un comando al arduino secundario
@@ -98,6 +95,11 @@ void loop() {
 
 // Se encarga de almacenar el usuario en el EEPROM
 void guardarUsuario(S_Usuario usuario_nuevo) {
+
+  // Se cifran los datos
+  cifrarDato(usuario_nuevo.nombre);
+  cifrarDato(usuario_nuevo.contrasenia);
+  cifrarDato(usuario_nuevo.num_celular);
 
   S_Inicial puntero;  // Servira para leer los punteros existentes
   S_Usuario usu_aux;  // Servira para leer usuario x usuario en la memoria EEPROM
@@ -139,8 +141,6 @@ void guardarUsuario(S_Usuario usuario_nuevo) {
     puntero.ini_libre += sizeof(S_Usuario);
     EEPROM.put(0, puntero);
   }
-
-  return true;
 }
 
 // Se encarga de eliminar un usuario que esta en el EEPROM segun su nombre
@@ -236,6 +236,12 @@ void mostrarUsuariosEEPROMConsola() {
     // Se recorre cada registro
     do {
       EEPROM.get(posicion_actual, usu_aux);
+      // Descifrando la informacion
+      descifrarDato(usu_aux.nombre);
+      descifrarDato(usu_aux.contrasenia);
+      descifrarDato(usu_aux.num_celular);
+
+      // Imprimiendo lo que se ha encontrado
       Serial.println(usu_aux.nombre);
       Serial.println(usu_aux.contrasenia);
       Serial.println(usu_aux.num_celular);
@@ -323,19 +329,33 @@ void mostrarLogsEEPROMConsola() {
 /***********************************/
 
 // Imprime el mensaje inicial en la pantalla LCD
-void imprimirMensajeInicial() {
-  lcd.clear();              // Se limpia el LCD
-  lcd.setCursor(1, 0);      // Se agrega al cursor para empezar a escribir en columna = 1, fila = 0
-  lcd.print("Bienvenido");  // Se imprime un texto
+void imprimirMensajeInicial(int posicion) {
+  lcd.clear();                    // Se limpia el LCD
+  lcd.setCursor(0, posicion);     // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.print("201709282|Javier");  // Se imprime un texto
 
-  lcd.setCursor(0, 1);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
-  lcd.print("GRP 01   SEC B");  // Se imprime un texto
+  lcd.setCursor(0, posicion + 1);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("201807032|Douglas");  // Se imprime un texto
 
-  lcd.createChar(0, caracter_bluetooth);  // Se crea el caracter customizado
-  lcd.setCursor(0, 0);                    // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
-  lcd.write(byte(0));                     // Se escribe el caracter
-  lcd.setCursor(11, 0);                   // Se agrega al cursor para empezar a escribir en columna = 11, fila = 0
-  lcd.write(byte(0));                     // Se escribe el caracter
+  lcd.setCursor(0, posicion + 2);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+  lcd.print("201807032|Gladys");   // Se imprime un texto
+
+  lcd.setCursor(0, posicion + 3);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+  lcd.print("201902502|Eduardo");  // Se imprime un texto
+
+  if (posicion == -1) {
+    lcd.setCursor(0, posicion + 4);    // Se agrega al cursor para empezar a escribir en columna = 0, fila = 4
+    lcd.print("201945242|Jefferson");  // Se imprime un texto
+  }
+}
+
+// Imprime las opciones disponibles del menu principal
+void imprimirMenuPrincipal() {
+  lcd.clear();               // Se limpia el LCD
+  lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.print("1) Login");     // Se imprime un texto
+  lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("2) Registro");  // Se imprime un texto
 }
 
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9]+
@@ -372,16 +392,35 @@ bool validarContrasenia(String texto) {
 }
 
 // Se encarga de cifrar los datos aplicando XOR a cada char
-String cifrarDato(char datos[]) {
+void cifrarDato(char datos[]) {
 
+  int tamanio = strlen(datos);
   // Primer pasada
-  for (int i = 0; i < strlen(datos); i++) {
+  for (int i = 0; i < tamanio; i++) {
     datos[i] = datos[i] ^ CLAVE_1;
   }
 
   // Segunda pasada
-  for (int i = 0; i < strlen(datos); i++) {
+  for (int i = 0; i < tamanio; i++) {
     datos[i] = datos[i] ^ CLAVE_2;
+  }
+
+  return datos;
+}
+
+// Se encarga de cifrar los datos aplicando XOR a cada char
+void descifrarDato(char datos[]) {
+
+  int tamanio = strlen(datos);
+
+  // Segunda pasada
+  for (int i = 0; i < tamanio; i++) {
+    datos[i] = datos[i] ^ CLAVE_2;
+  }
+
+  // Primer pasada
+  for (int i = 0; i < tamanio; i++) {
+    datos[i] = datos[i] ^ CLAVE_1;
   }
 
   return datos;
