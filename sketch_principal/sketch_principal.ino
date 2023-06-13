@@ -11,24 +11,27 @@ byte Fpines[4] = { 22, 23, 24, 25 };                                         // 
 byte Cpines[4] = { 26, 27, 28 };                                             // Pines para manejar las columnas del teclado
 Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // Mapeo de los valores que se obtienen a traves del teclado
 #define PIN_ACEPTAR 8                                                        // Pin para manejar la aceptacion de alguna accion
-#define PIN_CANCELAR 13                                                      // Pin para manejar la cancelacion de alguna accion
-#define PIN_DERECHA 31                                                       // Pin para manejar el movimiento hacia la derecha
-#define PIN_IZQUIERDA 32                                                     // Pin para manejar el movimiento hacia la izquierda
+#define PIN_CANCELAR 9                                                       // Pin para manejar la cancelacion de alguna accion
 
 // Estados del programa
 #define SECUENCIA_INICIAL 0
-#define MENU_PRINCIPAL 1
-#define INICIO_SESION 2
-#define REGISTRO 3
+#define ENTRADA_APP 1
+#define CONEXION_BLUETOOTH 2
+#define MENU_PRINCIPAL 3
+#define INICIO_SESION 4
+#define REGISTRO 5
 int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
-#define CLAVE_1 '2'  // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
-#define CLAVE_2 '9'  // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
+#define CLAVE_1 '2'               // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
+#define CLAVE_2 '9'               // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
+bool imprimir_mensaje = true;     // Es utilizada para imprimir informacion una sola vez al LCD
+String opcion_seleccionada = "";  // Es utilizado para almacenar la informacion obtenida atraves del panel de operacion (pad numerico)
 
 void setup() {
 
   Serial.begin(9600);   // Inicializa la comunicacion con el virtual terminal
+  Serial1.begin(9600);  // Inicializa la comunicacion con el HC-05
   Serial3.begin(9600);  // Inicializa la comunicacion con el segundo arduino
   lcd.begin(16, 4);     // Inicializa el LCD
 
@@ -38,52 +41,72 @@ void setup() {
   matriz_driver.clearDisplay(0);
 
   // Reinicia el EEPROM cada vez que se ejecute el programa
-  if (false) {
+  if (true) {
 
     S_Inicial ini;
     ini.ini_libre = sizeof(S_Inicial);
     EEPROM.put(0, ini);
 
     S_Usuario usu;
-    strcpy(usu.nombre, "USU1");
-    strcpy(usu.contrasenia, "11111");
-    strcpy(usu.num_celular, "12345678");
+    strcpy(usu.nombre, "ADMIN*22922");
+    strcpy(usu.contrasenia, "GRUPO18");
+    strcpy(usu.admin, "1");
     guardarUsuario(usu);
-
-    strcpy(usu.nombre, "USU2");
-    strcpy(usu.contrasenia, "22222");
-    strcpy(usu.num_celular, "87654321");
-    guardarUsuario(usu);
-
-    strcpy(usu.nombre, "USU3");
-    strcpy(usu.contrasenia, "33333");
-    strcpy(usu.num_celular, "45678123");
-    guardarUsuario(usu);
-
-    mostrarUsuariosEEPROMConsola();
   }
 }
 
 void loop() {
-  // char llave = teclado.getKey();
-  // if (llave != NO_KEY) {
-  //   Serial.println(llave);
-  // }
-  switch (estado_app) {
-    case SECUENCIA_INICIAL:
-      imprimirMensajeInicial(0);
-      delay(500);
-      imprimirMensajeInicial(-1);
-      delay(500);
+
+  if (estado_app == SECUENCIA_INICIAL) {
+    imprimirMensajeInicial(0);
+    delay(500);
+    imprimirMensajeInicial(-1);
+    delay(500);
+    estado_app = MENU_PRINCIPAL;
+  } else if (estado_app == ENTRADA_APP) {
+    // Imprimiendo opciones disponibles
+    if (imprimir_mensaje) {
+      imprimirEntradaAPP();
+      imprimir_mensaje = false;
+    }
+
+    // Interaccion atraves del panel de operacion
+    char llave = teclado.getKey();
+    if (llave != NO_KEY) {
+
+      opcion_seleccionada += llave;
+      lcd.setCursor(0, 3);                    // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print(">>" + opcion_seleccionada);  // Se imprime un texto
+    }
+  } else if (estado_app == CONEXION_BLUETOOTH) {
+
+    // Imprimiendo opciones disponibles
+    if (imprimir_mensaje) {
+      imprimirConexionBluetooth();
+      imprimir_mensaje = false;
+    }
+
+    // Recibiendo la respuesta
+    if (Serial1.available() > 0) {
       estado_app = MENU_PRINCIPAL;
-      break;
-    case MENU_PRINCIPAL:
+      reiniciarVariableAuxiliares();
+    }
+  } else if (estado_app == MENU_PRINCIPAL) {
+
+    // Imprimiendo opciones disponibles
+    if (imprimir_mensaje) {
       imprimirMenuPrincipal();
-      break;
-    case INICIO_SESION:
-      break;
+      imprimir_mensaje = false;
+    }
+
+    // Interaccion atraves del panel de la aplicacion
+    if (Serial1.available() > 0) {
+      estado_app = Serial1.readString().toInt();
+    }
   }
 
+  botonAceptar();
+  botonCancelar();
   // char respuesta[2];
   // Serial3.print("L1"); // Se envia un comando al arduino secundario
   // Serial3.readBytes(respuesta, 2); // Se lee la respuesta del arduino secundario y se almacena en el char 'respuesta'
@@ -100,6 +123,7 @@ void guardarUsuario(S_Usuario usuario_nuevo) {
   cifrarDato(usuario_nuevo.nombre);
   cifrarDato(usuario_nuevo.contrasenia);
   cifrarDato(usuario_nuevo.num_celular);
+  cifrarDato(usuario_nuevo.admin);
 
   S_Inicial puntero;  // Servira para leer los punteros existentes
   S_Usuario usu_aux;  // Servira para leer usuario x usuario en la memoria EEPROM
@@ -240,11 +264,13 @@ void mostrarUsuariosEEPROMConsola() {
       descifrarDato(usu_aux.nombre);
       descifrarDato(usu_aux.contrasenia);
       descifrarDato(usu_aux.num_celular);
+      descifrarDato(usu_aux.admin);
 
       // Imprimiendo lo que se ha encontrado
       Serial.println(usu_aux.nombre);
       Serial.println(usu_aux.contrasenia);
       Serial.println(usu_aux.num_celular);
+      Serial.println(usu_aux.admin);
       Serial.println(usu_aux.siguiente);
       posicion_actual = usu_aux.siguiente;
     } while (usu_aux.siguiente != -1);
@@ -325,6 +351,69 @@ void mostrarLogsEEPROMConsola() {
 }
 
 /***********************************/
+/************ BOTONES **************/
+/***********************************/
+
+// Reconoce el boton de aceptar presionado
+bool estado_boton_aceptar = false;
+bool ultimo_estado_boton_aceptar = false;
+unsigned long ultimo_tiempo_rebote_boton_aceptar = 0;
+const unsigned long delay_rebote_boton_aceptar = 50;
+void botonAceptar() {
+
+  int btnAceptar = digitalRead(PIN_ACEPTAR);
+
+  if (btnAceptar != ultimo_estado_boton_aceptar) {
+    ultimo_tiempo_rebote_boton_aceptar = millis();
+  }
+
+  if ((millis() - ultimo_tiempo_rebote_boton_aceptar) > delay_rebote_boton_aceptar) {
+    if (btnAceptar != estado_boton_aceptar) {
+      estado_boton_aceptar = btnAceptar;
+
+      if (estado_boton_aceptar == LOW) {
+
+        if (estado_app == ENTRADA_APP) {
+
+          if (opcion_seleccionada == "1") {
+            estado_app = CONEXION_BLUETOOTH;
+          } else if (opcion_seleccionada == "2") {
+            estado_app = MENU_PRINCIPAL;
+          }
+          reiniciarVariableAuxiliares();
+        }
+      }
+    }
+  }
+
+  ultimo_estado_boton_aceptar = btnAceptar;
+}
+
+// Reconoce el boton de cancelar presionado
+bool estado_boton_cancelar = false;
+bool ultimo_estado_boton_cancelar = false;
+unsigned long ultimo_tiempo_rebote_boton_cancelar = 0;
+const unsigned long delay_rebote_boton_cancelar = 50;
+void botonCancelar() {
+  int btnCancelar = digitalRead(PIN_ACEPTAR);
+
+  if (btnCancelar != ultimo_estado_boton_cancelar) {
+    ultimo_tiempo_rebote_boton_cancelar = millis();
+  }
+
+  if ((millis() - ultimo_tiempo_rebote_boton_cancelar) > delay_rebote_boton_cancelar) {
+    if (btnCancelar != estado_boton_cancelar) {
+      estado_boton_cancelar = btnCancelar;
+
+      if (estado_boton_cancelar == LOW) {
+      }
+    }
+  }
+
+  ultimo_estado_boton_cancelar = btnCancelar;
+}
+
+/***********************************/
 /************** UTIL ***************/
 /***********************************/
 
@@ -338,7 +427,7 @@ void imprimirMensajeInicial(int posicion) {
   lcd.print("201807032|Douglas");  // Se imprime un texto
 
   lcd.setCursor(0, posicion + 2);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
-  lcd.print("201807032|Gladys");   // Se imprime un texto
+  lcd.print("201807389|Gladys");   // Se imprime un texto
 
   lcd.setCursor(0, posicion + 3);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
   lcd.print("201902502|Eduardo");  // Se imprime un texto
@@ -350,12 +439,38 @@ void imprimirMensajeInicial(int posicion) {
 }
 
 // Imprime las opciones disponibles del menu principal
+void imprimirEntradaAPP() {
+  lcd.clear();                // Se limpia el LCD
+  lcd.setCursor(0, 0);        // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.print("Entrada");       // Se imprime un texto
+  lcd.setCursor(0, 1);        // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("1) APP Movil");  // Se imprime un texto
+  lcd.setCursor(0, 2);        // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("2) Panel Op.");  // Se imprime un texto
+}
+
+// Imprime el mensaje de espera de conexion a la aplicacion movil
+void imprimirConexionBluetooth() {
+  lcd.clear();               // Se limpia el LCD
+  lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.print("Esperando");    // Se imprime un texto
+  lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("conexion...");  // Se imprime un texto
+}
+
+// Imprime las opciones disponibles del menu principal
 void imprimirMenuPrincipal() {
   lcd.clear();               // Se limpia el LCD
   lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
   lcd.print("1) Login");     // Se imprime un texto
   lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
   lcd.print("2) Registro");  // Se imprime un texto
+}
+
+// Reinicia las variables auxiliares cada vez que se modifica el estado del app
+void reiniciarVariableAuxiliares() {
+  imprimir_mensaje = true;
+  opcion_seleccionada = "";
 }
 
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9]+
