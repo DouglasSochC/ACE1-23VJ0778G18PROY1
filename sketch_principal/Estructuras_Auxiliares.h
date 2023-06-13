@@ -1,3 +1,14 @@
+byte caracter_bluetooth[8] = {
+  B00100,
+  B00110,
+  B10101,
+  B01110,
+  B01110,
+  B10101,
+  B00110,
+  B00100
+};
+
 // Estructura que almacena los eventos que ocurren en la app.
 // Tamanio de la estructura = 20 bytes
 struct S_Log {
