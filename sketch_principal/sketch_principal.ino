@@ -15,18 +15,18 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 
 // Estados del programa
 #define SECUENCIA_INICIAL 0
-#define ENTRADA_APP 1
-#define CONEXION_BLUETOOTH 2
-#define MENU_PRINCIPAL 3
-#define INICIO_SESION 4
-#define REGISTRO 5
+#define MENU_PRINCIPAL 1
+#define INICIO_SESION 2
+#define REGISTRO_USUARIO 3
 int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
-#define CLAVE_1 '2'               // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
-#define CLAVE_2 '9'               // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
-bool imprimir_mensaje = true;     // Es utilizada para imprimir informacion una sola vez al LCD
-String opcion_seleccionada = "";  // Es utilizado para almacenar la informacion obtenida atraves del panel de operacion (pad numerico)
+#define CLAVE_1 '2'            // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
+#define CLAVE_2 '9'            // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
+bool imprimir_mensaje = true;  // Es utilizada para imprimir informacion una sola vez al LCD
+String entrada = "";           // Es utilizada para determinar si ya se ha eligido una entrada; las opciones que se pueden encontrar son: P (panel), M (movil) y B (un auxiliar para la conexion bluetooth)
+String temp_texto = "";        // Es utilizado para almacenar la informacion obtenida atraves del panel de operacion o la aplicacion movil
+S_Usuario temp_usuario;        // Es utilizado para almacenar la informacion del usuario obtenida a traves de del panel de operacion o la aplicacion movil
 
 void setup() {
 
@@ -63,34 +63,6 @@ void loop() {
     imprimirMensajeInicial(-1);
     delay(500);
     estado_app = MENU_PRINCIPAL;
-  } else if (estado_app == ENTRADA_APP) {
-    // Imprimiendo opciones disponibles
-    if (imprimir_mensaje) {
-      imprimirEntradaAPP();
-      imprimir_mensaje = false;
-    }
-
-    // Interaccion atraves del panel de operacion
-    char llave = teclado.getKey();
-    if (llave != NO_KEY) {
-
-      opcion_seleccionada += llave;
-      lcd.setCursor(0, 3);                    // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
-      lcd.print(">>" + opcion_seleccionada);  // Se imprime un texto
-    }
-  } else if (estado_app == CONEXION_BLUETOOTH) {
-
-    // Imprimiendo opciones disponibles
-    if (imprimir_mensaje) {
-      imprimirConexionBluetooth();
-      imprimir_mensaje = false;
-    }
-
-    // Recibiendo la respuesta
-    if (Serial1.available() > 0) {
-      estado_app = MENU_PRINCIPAL;
-      reiniciarVariableAuxiliares();
-    }
   } else if (estado_app == MENU_PRINCIPAL) {
 
     // Imprimiendo opciones disponibles
@@ -99,9 +71,84 @@ void loop() {
       imprimir_mensaje = false;
     }
 
-    // Interaccion atraves del panel de la aplicacion
-    if (Serial1.available() > 0) {
-      estado_app = Serial1.readString().toInt();
+    // Selecciona alguna opcion del menu principal
+    char llave = teclado.getKey();
+    if (llave != NO_KEY) {
+      temp_texto += llave;
+      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print(">>" + temp_texto);  // Se imprime un texto
+    }
+  } else if (estado_app == INICIO_SESION) {
+
+    if (entrada == "") {  // Seleccionando el tipo de entrada que sera utilizada para el inicio de sesion
+
+      // Imprimiendo opciones disponibles
+      if (imprimir_mensaje) {
+        imprimirEntradaAPP();
+        imprimir_mensaje = false;
+      }
+
+      // Interaccion atraves del panel de operacion
+      char llave = teclado.getKey();
+      if (llave != NO_KEY) {
+        temp_texto += llave;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
+      }
+    } else if (entrada == "B") {  // Si selecciono MOVIL entonces se hara la conexion bluetooth
+      // Imprimiendo opciones disponibles
+      if (imprimir_mensaje) {
+        imprimirConexionBluetooth();
+        imprimir_mensaje = false;
+      }
+
+      // Recibiendo la respuesta
+      if (Serial1.available() > 0) {
+        entrada = "M";
+        reiniciarVariableAuxiliares();
+      }
+    } else if (entrada == "M") {  // Trabajando con la app movil
+      Serial.println("ESTOY EN MOVIL");
+      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+    } else if (entrada == "P") {  // Trabajando con el panel de operaciones
+      Serial.println("ESTOY EN PANEL DE OPERACION");
+      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+    }
+
+  } else if (estado_app == REGISTRO_USUARIO) {
+
+    if (entrada == "") {  // Seleccionando el tipo de entrada que sera utilizada para el registro de usuario
+      // Imprimiendo opciones disponibles
+      if (imprimir_mensaje) {
+        imprimirEntradaAPP();
+        imprimir_mensaje = false;
+      }
+
+      // Interaccion atraves del panel de operacion
+      char llave = teclado.getKey();
+      if (llave != NO_KEY) {
+        temp_texto += llave;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
+      }
+    } else if (entrada == "B") {  // Si selecciono MOVIL entonces se hara la conexion bluetooth
+      // Imprimiendo opciones disponibles
+      if (imprimir_mensaje) {
+        imprimirConexionBluetooth();
+        imprimir_mensaje = false;
+      }
+
+      // Recibiendo la respuesta
+      if (Serial1.available() > 0) {
+        entrada = "M";
+        reiniciarVariableAuxiliares();
+      }
+    } else if (entrada == "M") {  // Trabajando con la app movil
+      Serial.println("ESTOY EN MOVIL");
+      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+    } else if (entrada == "P") {  // Trabajando con el panel de operaciones
+      Serial.println("ESTOY EN PANEL DE OPERACION");
+      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
     }
   }
 
@@ -373,12 +420,27 @@ void botonAceptar() {
 
       if (estado_boton_aceptar == LOW) {
 
-        if (estado_app == ENTRADA_APP) {
+        if (estado_app == MENU_PRINCIPAL) {
 
-          if (opcion_seleccionada == "1") {
-            estado_app = CONEXION_BLUETOOTH;
-          } else if (opcion_seleccionada == "2") {
-            estado_app = MENU_PRINCIPAL;
+          if (temp_texto == "1") {
+            estado_app = INICIO_SESION;
+          } else if (temp_texto == "2") {
+            estado_app = REGISTRO_USUARIO;
+          }
+          reiniciarVariableAuxiliares();
+
+        } else if (estado_app == INICIO_SESION && entrada == "") {
+          if (temp_texto == "1") {
+            entrada = "B";
+          } else if (temp_texto == "2") {
+            entrada = "P";
+          }
+          reiniciarVariableAuxiliares();
+        } else if (estado_app == REGISTRO_USUARIO && entrada == "") {
+          if (temp_texto == "1") {
+            entrada = "B";
+          } else if (temp_texto == "2") {
+            entrada = "P";
           }
           reiniciarVariableAuxiliares();
         }
@@ -442,7 +504,7 @@ void imprimirMensajeInicial(int posicion) {
 void imprimirEntradaAPP() {
   lcd.clear();                // Se limpia el LCD
   lcd.setCursor(0, 0);        // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
-  lcd.print("Entrada");       // Se imprime un texto
+  lcd.print("Entrada:");      // Se imprime un texto
   lcd.setCursor(0, 1);        // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
   lcd.print("1) APP Movil");  // Se imprime un texto
   lcd.setCursor(0, 2);        // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
@@ -470,7 +532,7 @@ void imprimirMenuPrincipal() {
 // Reinicia las variables auxiliares cada vez que se modifica el estado del app
 void reiniciarVariableAuxiliares() {
   imprimir_mensaje = true;
-  opcion_seleccionada = "";
+  temp_texto = "";
 }
 
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9]+
