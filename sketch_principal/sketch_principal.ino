@@ -361,7 +361,9 @@ bool existenciaUsuario(const char* nombre) {
 // Para el uso de este metodo es necesario que el parametro 'nombre' este cifrado
 bool esUsuarioAdministrador(const char* nombre) {
 
-  String admin = cifrarDato("1");
+  char admin[2];
+  strcpy(admin, "1");
+  cifrarDato(admin);
 
   S_Inicial puntero;    // Servira para leer los punteros existentes
   S_Usuario usu_aux;    // Servira para leer usuario x usuario en la memoria EEPROM
@@ -376,7 +378,7 @@ bool esUsuarioAdministrador(const char* nombre) {
     EEPROM.get(pos_actual, usu_aux);
 
     // Se indica que ya existe un usuario con el nombre indicado
-    if (strcmp(usu_aux.nombre, nombre) == 0 && strcmp(usu_aux.admin, admin.c_str()) == 0) {
+    if (strcmp(usu_aux.nombre, nombre) == 0 && strcmp(usu_aux.admin, admin) == 0) {
       return true;
     }
 
@@ -409,7 +411,7 @@ bool inicioSesionUsuario(const char* nombre, const char* contrasenia) {
     EEPROM.get(pos_actual, usu_aux);
 
     // Existe un usuario con el nombre y contrasenia indicado
-    if (strcmp(usu_aux.nombre, nombre) == 0 && strcmp(usu_aux.contrasenia, contrasenia)) {
+    if (strcmp(usu_aux.nombre, nombre) == 0 && strcmp(usu_aux.contrasenia, contrasenia) == 0) {
       return true;
     }
 
@@ -574,11 +576,11 @@ void botonAceptar() {
             entrada = "P";
           }
           reiniciarVariableAuxiliares();
-        } else if (estado_app == INICIO_SESION && entrada == "P") {
+        } else if (estado_app == INICIO_SESION && (entrada == "P" || entrada == "M")) {
           if (strlen(temp_usuario.nombre) == 0) {
             strcpy(temp_usuario.nombre, temp_texto.c_str());
             reiniciarVariableAuxiliares();
-          } else if (temp_usuario.contrasenia == 0) {
+          } else if (strlen(temp_usuario.contrasenia) == 0) {
             strcpy(temp_usuario.contrasenia, temp_texto.c_str());
             reiniciarVariableAuxiliares();
           } else {
@@ -628,7 +630,7 @@ bool ultimo_estado_boton_cancelar = false;
 unsigned long ultimo_tiempo_rebote_boton_cancelar = 0;
 const unsigned long delay_rebote_boton_cancelar = 50;
 void botonCancelar() {
-  int btnCancelar = digitalRead(PIN_ACEPTAR);
+  int btnCancelar = digitalRead(PIN_CANCELAR);
 
   if (btnCancelar != ultimo_estado_boton_cancelar) {
     ultimo_tiempo_rebote_boton_cancelar = millis();
@@ -639,6 +641,15 @@ void botonCancelar() {
       estado_boton_cancelar = btnCancelar;
 
       if (estado_boton_cancelar == LOW) {
+        if (estado_app == INICIO_SESION && (entrada == "P" || entrada == "M")) {
+          if (strlen(temp_usuario.nombre) == 0) {
+            temp_texto = "";
+            reiniciarVariableAuxiliares();
+          } else if (strlen(temp_usuario.contrasenia) == 0) {
+            temp_texto = "";
+            reiniciarVariableAuxiliares();
+          }
+        }
       }
     }
   }
