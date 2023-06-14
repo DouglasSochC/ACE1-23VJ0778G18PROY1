@@ -18,7 +18,9 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 #define MENU_PRINCIPAL 1
 #define INICIO_SESION 2
 #define REGISTRO_USUARIO 3
-int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
+#define MENU_USUARIO 4
+#define MENU_ADMINISTRADOR 5
+int estado_app = MENU_PRINCIPAL;  // Indica el estado actual en el que esta el programa
 
 // Util
 #define CLAVE_1 '2'            // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
@@ -27,6 +29,8 @@ bool imprimir_mensaje = true;  // Es utilizada para imprimir informacion una sol
 String entrada = "";           // Es utilizada para determinar si ya se ha eligido una entrada; las opciones que se pueden encontrar son: P (panel), M (movil) y B (un auxiliar para la conexion bluetooth)
 String temp_texto = "";        // Es utilizado para almacenar la informacion obtenida atraves del panel de operacion o la aplicacion movil
 S_Usuario temp_usuario;        // Es utilizado para almacenar la informacion del usuario obtenida a traves de del panel de operacion o la aplicacion movil
+short indice_abecedario = 0;   // Almacena la posicion actual de la letra a mostrar en la matriz led
+short intentos = 0;
 
 void setup() {
 
@@ -51,6 +55,17 @@ void setup() {
     strcpy(usu.nombre, "ADMIN*22922");
     strcpy(usu.contrasenia, "GRUPO18");
     strcpy(usu.admin, "1");
+    guardarUsuario(usu);
+
+    strcpy(usu.nombre, "A1");
+    strcpy(usu.contrasenia, "A1");
+    strcpy(usu.admin, "1");
+    guardarUsuario(usu);
+
+    strcpy(usu.nombre, "B1");
+    strcpy(usu.contrasenia, "B1");
+    strcpy(usu.num_celular, "12345678");
+    strcpy(usu.admin, "0");
     guardarUsuario(usu);
   }
 }
@@ -95,7 +110,7 @@ void loop() {
         lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
         lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
-    } else if (entrada == "B") {  // Si selecciono MOVIL entonces se hara la conexion bluetooth
+    } else if (entrada == "B") {  // Si selecciona MOVIL entonces se hara la conexion bluetooth
       // Imprimiendo opciones disponibles
       if (imprimir_mensaje) {
         imprimirConexionBluetooth();
@@ -111,8 +126,42 @@ void loop() {
       Serial.println("ESTOY EN MOVIL");
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
-      Serial.println("ESTOY EN PANEL DE OPERACION");
-      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+
+      if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
+        lcd.clear();              // Se limpia el LCD
+        lcd.setCursor(0, 0);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");  // Se imprime un texto
+        lcd.setCursor(0, 1);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("usuario");     // Se imprime un texto
+        imprimir_mensaje = false;
+      } else if (imprimir_mensaje && strlen(temp_usuario.contrasenia) == 0) {
+        lcd.clear();               // Se limpia el LCD
+        lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");   // Se imprime un texto
+        lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("contrasenia");  // Se imprime un texto
+        imprimir_mensaje = false;
+      }
+
+      imprimirLetraMatrizConDriver();
+
+      // Interaccion atraves del panel de operacion
+      char llave = teclado.getKey();
+      if (llave != NO_KEY) {
+        if (llave == '*') {
+          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+        } else if (llave == '#') {
+          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+        } else if (llave == '0') {
+          char caracter = 65 + indice_abecedario;
+          temp_texto += caracter;
+        } else {
+          temp_texto += llave;
+        }
+
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
+      }
     }
 
   } else if (estado_app == REGISTRO_USUARIO) {
@@ -149,6 +198,21 @@ void loop() {
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
       Serial.println("ESTOY EN PANEL DE OPERACION");
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+    }
+  } else if (estado_app == MENU_USUARIO) {
+
+    // Imprimiendo opciones disponibles
+    if (imprimir_mensaje) {
+      imprimirMenuUsuario();
+      imprimir_mensaje = false;
+    }
+
+  } else if (estado_app == MENU_ADMINISTRADOR) {
+
+    // Imprimiendo opciones disponibles
+    if (imprimir_mensaje) {
+      imprimirMenuAdministrador();
+      imprimir_mensaje = false;
     }
   }
 
@@ -214,7 +278,8 @@ void guardarUsuario(S_Usuario usuario_nuevo) {
   }
 }
 
-// Se encarga de eliminar un usuario que esta en el EEPROM segun su nombre
+// Se encarga de eliminar un usuario que esta en el EEPROM segun su nombre;
+// Para el uso de este metodo es necesario que el parametro 'nombre' este cifrado
 void eliminarUsuario(const char* nombre) {
 
   S_Inicial puntero;      // Servira para leer los punteros existentes
@@ -262,7 +327,8 @@ void eliminarUsuario(const char* nombre) {
   } while (usu_actual.siguiente != -1);
 }
 
-// Se encarga de verificar si existe un usuario con el mismo nombre en el EEPROM
+// Se encarga de verificar si existe un usuario con el mismo nombre en el EEPROM;
+// Para el uso de este metodo es necesario que el parametro 'nombre' este cifrado
 bool existenciaUsuario(const char* nombre) {
 
   S_Inicial puntero;    // Servira para leer los punteros existentes
@@ -279,6 +345,71 @@ bool existenciaUsuario(const char* nombre) {
 
     // Se indica que ya existe un usuario con el nombre indicado
     if (strcmp(usu_aux.nombre, nombre) == 0) {
+      return true;
+    }
+
+    // Se modifica la posicion actual para verificar el siguiente registro
+    pos_actual = usu_aux.siguiente;
+
+  } while (usu_aux.siguiente != -1);
+
+  // Se indica que no existe el nombre de usuario indicado
+  return false;
+}
+
+// Se encarga de verificar si un usuario es administrador;
+// Para el uso de este metodo es necesario que el parametro 'nombre' este cifrado
+bool esUsuarioAdministrador(const char* nombre) {
+
+  String admin = cifrarDato("1");
+
+  S_Inicial puntero;    // Servira para leer los punteros existentes
+  S_Usuario usu_aux;    // Servira para leer usuario x usuario en la memoria EEPROM
+  int pos_actual = -1;  // Servira como indice para empezar a leer una estructura de usuario
+
+  // Se obtiene la estructura que contiene la informacion del puntero
+  EEPROM.get(0, puntero);
+  pos_actual = puntero.ini_usuario;
+
+  do {
+    // Se lee el registro
+    EEPROM.get(pos_actual, usu_aux);
+
+    // Se indica que ya existe un usuario con el nombre indicado
+    if (strcmp(usu_aux.nombre, nombre) == 0 && strcmp(usu_aux.admin, admin.c_str()) == 0) {
+      return true;
+    }
+
+    // Se modifica la posicion actual para verificar el siguiente registro
+    pos_actual = usu_aux.siguiente;
+
+  } while (usu_aux.siguiente != -1);
+
+  // Se indica que no existe el nombre de usuario indicado
+  return false;
+}
+
+// Se encarga de verificar si existe los datos del inicio de sesion se encuentran  en la EEPROM;
+// ademas automaticamente cifra el nombre y la contrasenia
+bool inicioSesionUsuario(const char* nombre, const char* contrasenia) {
+
+  cifrarDato(nombre);
+  cifrarDato(contrasenia);
+
+  S_Inicial puntero;    // Servira para leer los punteros existentes
+  S_Usuario usu_aux;    // Servira para leer usuario x usuario en la memoria EEPROM
+  int pos_actual = -1;  // Servira como indice para empezar a leer una estructura de usuario
+
+  // Se obtiene la estructura que contiene la informacion del puntero
+  EEPROM.get(0, puntero);
+  pos_actual = puntero.ini_usuario;
+
+  do {
+    // Se lee el registro
+    EEPROM.get(pos_actual, usu_aux);
+
+    // Existe un usuario con el nombre y contrasenia indicado
+    if (strcmp(usu_aux.nombre, nombre) == 0 && strcmp(usu_aux.contrasenia, contrasenia)) {
       return true;
     }
 
@@ -443,6 +574,46 @@ void botonAceptar() {
             entrada = "P";
           }
           reiniciarVariableAuxiliares();
+        } else if (estado_app == INICIO_SESION && entrada == "P") {
+          if (strlen(temp_usuario.nombre) == 0) {
+            strcpy(temp_usuario.nombre, temp_texto.c_str());
+            reiniciarVariableAuxiliares();
+          } else if (temp_usuario.contrasenia == 0) {
+            strcpy(temp_usuario.contrasenia, temp_texto.c_str());
+            reiniciarVariableAuxiliares();
+          } else {
+            bool respuesta = inicioSesionUsuario(temp_usuario.nombre, temp_usuario.contrasenia);
+            if (respuesta) {
+              // Se verifica el tipo de usuario
+              bool es_admin = esUsuarioAdministrador(temp_usuario.nombre);
+              if (es_admin) {
+                estado_app = MENU_ADMINISTRADOR;
+              } else {
+                estado_app = MENU_USUARIO;
+              }
+              reiniciarVariableAuxiliares();
+              entrada = "";
+            } else {
+              lcd.clear();                    // Se limpia el LCD
+              lcd.setCursor(0, 0);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+              lcd.print("ERROR: No existe");  // Se imprime un texto
+              lcd.setCursor(0, 1);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+              lcd.print("el usuario");        // Se imprime un texto
+              lcd.setCursor(0, 2);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+              lcd.print("ingresado");         // Se imprime un texto
+              reiniciarVariableAuxiliares();
+              temp_usuario = {};
+              intentos++;
+              delay(500);
+            }
+
+            if (intentos >= 2) {
+              delay(10000);
+              intentos = 0;
+              entrada = "";
+              estado_app = SECUENCIA_INICIAL;
+            }
+          }
         }
       }
     }
@@ -529,10 +700,41 @@ void imprimirMenuPrincipal() {
   lcd.print("2) Registro");  // Se imprime un texto
 }
 
+// Imprime las opciones disponibles del menu de usuario normal
+void imprimirMenuUsuario() {
+  lcd.clear();                    // Se limpia el LCD
+  lcd.setCursor(0, 0);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.print("1) Ingreso cel.");   // Se imprime un texto
+  lcd.setCursor(0, 1);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("2) Retiro cel.");    // Se imprime un texto
+  lcd.setCursor(0, 2);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("3) Cerrar sesion");  // Se imprime un texto
+  lcd.setCursor(0, 3);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("4) Eliminar cta.");  // Se imprime un texto
+}
+
+// Imprime las opciones disponibles del menu de usuario normal
+void imprimirMenuAdministrador() {
+  lcd.clear();                  // Se limpia el LCD
+  lcd.setCursor(0, 0);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+  lcd.print("1) Ver logs");     // Se imprime un texto
+  lcd.setCursor(0, 1);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+  lcd.print("2) Estado sis.");  // Se imprime un texto
+}
+
 // Reinicia las variables auxiliares cada vez que se modifica el estado del app
 void reiniciarVariableAuxiliares() {
   imprimir_mensaje = true;
   temp_texto = "";
+}
+
+// Imprime una letra en la matriz con driver
+void imprimirLetraMatrizConDriver() {
+  for (int fila = 0; fila < 8; fila++) {
+    for (int columna = 0; columna < 8; columna++) {
+      matriz_driver.setLed(0, 7 - fila, columna, abecedario[indice_abecedario][fila][columna]);
+    }
+  }
 }
 
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9]+
