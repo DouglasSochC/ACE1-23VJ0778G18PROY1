@@ -24,17 +24,20 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 #define INGRESO_CELULAR 6
 #define RETIRO_CELULAR 7
 #define ELIMINACION_CUENTA 8
+#define INGRESO_CELULAR_ENTRADA 9
+#define RETIRO_CELULAR_ENTRADA 10
 int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
-#define CLAVE_1 '2'            // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
-#define CLAVE_2 '9'            // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
-bool imprimir_mensaje = true;  // Es utilizada para imprimir informacion una sola vez al LCD
-String entrada = "";           // Es utilizada para determinar si ya se ha eligido una entrada; las opciones que se pueden encontrar son: P (panel), M (movil) y B (un auxiliar para la conexion bluetooth)
-String temp_texto = "";        // Es utilizado para almacenar la informacion obtenida atraves del panel de operacion o la aplicacion movil
-S_Usuario temp_usuario;        // Es utilizado para almacenar la informacion del usuario obtenida a traves de del panel de operacion o la aplicacion movil
-short indice_abecedario = 0;   // Almacena la posicion actual de la letra a mostrar en la matriz led
-short intentos = 0;
+#define CLAVE_1 '2'                                            // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
+#define CLAVE_2 '9'                                            // Representa el valor que sera utilizado para aplicar un XOR en la segunda pasada
+bool imprimir_mensaje = true;                                  // Es utilizada para imprimir informacion una sola vez al LCD
+String entrada = "";                                           // Es utilizada para determinar si ya se ha eligido una entrada; las opciones que se pueden encontrar son: P (panel), M (movil) y B (un auxiliar para la conexion bluetooth)
+String temp_texto = "";                                        // Es utilizado para almacenar la informacion obtenida atraves del panel de operacion o la aplicacion movil
+S_Usuario temp_usuario;                                        // Es utilizado para almacenar la informacion del usuario obtenida a traves de del panel de operacion o la aplicacion movil
+short indice_abecedario = 0;                                   // Almacena la posicion actual de la letra a mostrar en la matriz led
+short intentos = 0;                                            // Almacena la cantidad de intentos que ha realizado el usuario para iniciar sesion
+bool temp_ingreso_celular[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };  // Almacena temporalmente las posiciones de ingreso de un celular en los compartimentos disponibles eso servira para el usuario logueado
 
 void setup() {
 
@@ -250,7 +253,7 @@ void loop() {
       }
       lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
       lcd.print(">>" + temp_texto);  // Se imprime un texto
-    } else if (entrada == "P") {  // Trabajando con el panel de operaciones
+    } else if (entrada == "P") {     // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
         lcd.clear();              // Se limpia el LCD
@@ -317,7 +320,106 @@ void loop() {
       imprimir_mensaje = false;
     }
   } else if (estado_app == INGRESO_CELULAR) {
+
+    // Se imprimen los compartimientos disponibles y ocupados
     imprimirCompartimentos();
+
+    // Imprimiendo opciones disponibles
+    if (imprimir_mensaje) {
+      lcd.clear();                 // Se limpia el LCD
+      lcd.setCursor(0, 0);         // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print("Seleccione un");  // Se imprime un texto
+      lcd.setCursor(0, 1);         // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+      lcd.print("compartimento");  // Se imprime un texto
+      lcd.setCursor(0, 2);         // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+      lcd.print("disponible");     // Se imprime un texto
+      imprimir_mensaje = false;
+    }
+
+    // Se escucha cuales son las posiciones en los que el usuario ingreso su(s) celular(es)
+    ingresoCelularSensor();
+
+  } else if (estado_app == INGRESO_CELULAR_ENTRADA) {
+
+    if (entrada == "") {  // Seleccionando el tipo de entrada que sera utilizada para el inicio de sesion
+
+      // Imprimiendo opciones disponibles
+      if (imprimir_mensaje) {
+        imprimirEntradaAPP();
+        imprimir_mensaje = false;
+      }
+
+      // Interaccion atraves del panel de operacion
+      char llave = teclado.getKey();
+      if (llave != NO_KEY) {
+        temp_texto += llave;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
+      }
+    } else if (entrada == "B") {  // Si selecciona MOVIL entonces se hara la conexion bluetooth
+      // Imprimiendo opciones disponibles
+      if (imprimir_mensaje) {
+        imprimirConexionBluetooth();
+        imprimir_mensaje = false;
+      }
+
+      // Recibiendo la respuesta
+      if (Serial1.available() > 0) {
+        entrada = "M";
+        reiniciarVariableAuxiliares();
+      }
+    } else if (entrada == "M") {  // Trabajando con la app movil
+
+      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+      if (imprimir_mensaje) {
+        lcd.clear();               // Se limpia el LCD
+        lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");   // Se imprime un texto
+        lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("contrasenia");  // Se imprime un texto
+        imprimir_mensaje = false;
+      }
+
+      // Recibiendo la respuesta
+      while (Serial1.available() > 0) {
+        char caracter = Serial1.read();
+        temp_texto += caracter;
+      }
+      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+      lcd.print(">>" + temp_texto);  // Se imprime un texto
+
+    } else if (entrada == "P") {  // Trabajando con el panel de operaciones
+
+      if (imprimir_mensaje) {
+        lcd.clear();               // Se limpia el LCD
+        lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");   // Se imprime un texto
+        lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("contrasenia");  // Se imprime un texto
+        imprimir_mensaje = false;
+      }
+
+      imprimirLetraMatrizConDriver();
+
+      // Interaccion atraves del panel de operacion
+      char llave = teclado.getKey();
+      if (llave != NO_KEY) {
+        if (llave == '*') {
+          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+        } else if (llave == '#') {
+          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+        } else if (llave == '0') {
+          char caracter = 65 + indice_abecedario;
+          temp_texto += caracter;
+        } else {
+          temp_texto += llave;
+        }
+
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
+      }
+    }
+
   } else if (estado_app == RETIRO_CELULAR) {
     imprimirCompartimentos();
   } else if (estado_app == ELIMINACION_CUENTA) {
@@ -327,7 +429,7 @@ void loop() {
   botonAceptar();
   botonCancelar();
   botonReiniciar();
-  reconociendoSensores();
+  reconociendoSensoresCalor();
 }
 
 /***********************************/
@@ -702,6 +804,7 @@ void botonAceptar() {
               }
               reiniciarVariableAuxiliares();
               entrada = "";
+              intentos = 0;
             } else {
               lcd.clear();                    // Se limpia el LCD
               lcd.setCursor(0, 0);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
@@ -798,6 +901,58 @@ void botonAceptar() {
             estado_app = ELIMINACION_CUENTA;
           }
           reiniciarVariableAuxiliares();
+        } else if (estado_app == INGRESO_CELULAR) {
+          estado_app = INGRESO_CELULAR_ENTRADA;
+          entrada = "";
+          reiniciarVariableAuxiliares();
+        } else if (estado_app == INGRESO_CELULAR_ENTRADA && entrada == "") {
+          if (temp_texto == "1") {
+            entrada = "B";
+          } else if (temp_texto == "2") {
+            entrada = "P";
+          }
+          reiniciarVariableAuxiliares();
+        } else if (estado_app == INGRESO_CELULAR_ENTRADA && (entrada == "P" || entrada == "M")) {
+
+          cifrarDato(temp_texto.c_str());
+          if (strcmp(temp_usuario.contrasenia, temp_texto.c_str()) == 0) {
+
+            // Se almacenan dichos registros
+            S_Compartimientos temp_comp;
+            EEPROM.get(sizeof(S_Inicial), temp_comp);
+            for (int i = 0; i < 9; i++) {
+              if (temp_ingreso_celular[i]) {
+                strcpy(temp_comp.compartimentos[i], temp_usuario.nombre);
+              }
+            }
+            EEPROM.put(sizeof(S_Inicial), temp_comp);
+            reiniciarVariableAuxiliares();
+            entrada = "";
+            estado_app = MENU_USUARIO;
+            intentos = 0;
+            for (int i = 0; i < 9; i++) {
+              temp_ingreso_celular[i] = false;
+            }
+          } else {
+
+            lcd.clear();               // Se limpia el LCD
+            lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+            lcd.print("ERROR:");       // Se imprime un texto
+            lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+            lcd.print("contrasenia");  // Se imprime un texto
+            lcd.setCursor(0, 2);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+            lcd.print("incorrecta");   // Se imprime un texto
+            reiniciarVariableAuxiliares();
+            intentos++;
+            delay(500);
+
+            if (intentos >= 2) {
+              delay(10000);
+              intentos = 0;
+              entrada = "";
+              estado_app = MENU_USUARIO;
+            }
+          }
         }
       }
     }
@@ -950,12 +1105,72 @@ void imprimirCompartimentos() {
   }
 }
 
+// Se encarga de verificar en que posicion el usuario a ingresado su(s) celular(es)
+void ingresoCelularSensor() {
+
+  char res_digital[2];
+  Serial3.print("B1");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[0] = atoi(res_digital);
+  Serial3.print("B2");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[1] = atoi(res_digital);
+  Serial3.print("B3");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[2] = atoi(res_digital);
+  Serial3.print("B4");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[3] = atoi(res_digital);
+  Serial3.print("B5");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[4] = atoi(res_digital);
+  Serial3.print("B6");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[5] = atoi(res_digital);
+  Serial3.print("B7");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[6] = atoi(res_digital);
+  Serial3.print("B8");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[7] = atoi(res_digital);
+  Serial3.print("B9");
+  Serial3.readBytes(res_digital, 1);
+  res_digital[1] = '\0';
+  temp_ingreso_celular[8] = atoi(res_digital);
+}
+
 // Se encarga de ir verificando el estado de todos los sensores
-void reconociendoSensores() {
-  // char res_serial3[2];
-  // Serial3.print("S1");
-  // Serial3.readBytes(res_serial3, 2); // Se lee la respuesta del arduino secundario y se almacena en el char 'respuesta'
-  // Serial.println(res_serial3);
+void reconociendoSensoresCalor() {
+
+  char res_analogica[2];
+
+  // Reconociendo sensores
+  Serial3.print("S1");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S2");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S3");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S4");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S5");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S6");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S7");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S8");
+  Serial3.readBytes(res_analogica, 2);
+  Serial3.print("S9");
+  Serial3.readBytes(res_analogica, 2);
 }
 
 /***********************************/
