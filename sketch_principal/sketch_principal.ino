@@ -26,6 +26,8 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 #define ELIMINACION_CUENTA 8
 #define INGRESO_CELULAR_ENTRADA 9
 #define RETIRO_CELULAR_ENTRADA 10
+#define LOGS 11
+#define ESTADO_SISTEMA 12
 int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
@@ -537,6 +539,10 @@ void loop() {
         lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
     }
+  } else if (estado_app == LOGS) {
+
+  } else if (estado_app == ESTADO_SISTEMA) {
+    
   }
 
   botonAceptar();
@@ -786,6 +792,10 @@ void mostrarUsuariosEEPROMConsola() {
 // Se encarga de almacenar el log en el EEPROM
 void guardarLog(S_Log log_nuevo) {
 
+  int acum_id = 1;    // Servira para determinar automaticamente el id del log
+  log_nuevo.id = acum_id;
+  cifrarDato(log_nuevo.descripcion);
+
   S_Inicial puntero;  // Servira para leer los punteros existentes
   S_Log log_aux;      // Servira para leer log x log en la memoria EEPROM
   int pos_aux;        // Almacena la posicion donde se encuentra el ultimo registro de la estructura log
@@ -813,6 +823,7 @@ void guardarLog(S_Log log_nuevo) {
     while (log_aux.siguiente != -1) {
       pos_aux = log_aux.siguiente;
       EEPROM.get(log_aux.siguiente, log_aux);
+      acum_id++;
     }
 
     // Se modifica el puntero 'siguiente' del ultimo registro para que apunte al nuevo registro a ingresar
@@ -820,6 +831,8 @@ void guardarLog(S_Log log_nuevo) {
     EEPROM.put(pos_aux, log_aux);
 
     // Se inserta el nuevo log
+    acum_id++;
+    log_nuevo.id = acum_id;
     EEPROM.put(log_aux.siguiente, log_nuevo);
 
     // Se actualiza la nueva posicion libre
@@ -844,6 +857,10 @@ void mostrarLogsEEPROMConsola() {
     // Se recorre cada registro
     do {
       EEPROM.get(posicion_actual, log_aux);
+      // Descifrando la informacion
+      descifrarDato(log_aux.descripcion);
+
+      // Imprimiendo lo que se ha encontrado
       Serial.println(log_aux.id);
       Serial.println(log_aux.descripcion);
       Serial.println(log_aux.siguiente);
