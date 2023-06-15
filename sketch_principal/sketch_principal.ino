@@ -131,6 +131,31 @@ void loop() {
     } else if (entrada == "M") {  // Trabajando con la app movil
       Serial.println("ESTOY EN MOVIL");
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+      if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
+        lcd.clear();              // Se limpia el LCD
+        lcd.setCursor(0, 0);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");  // Se imprime un texto
+        lcd.setCursor(0, 1);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("usuario");     // Se imprime un texto
+        imprimir_mensaje = false;
+      } else if (imprimir_mensaje && strlen(temp_usuario.contrasenia) == 0) {
+        lcd.clear();               // Se limpia el LCD
+        lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");   // Se imprime un texto
+        lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("contrasenia");  // Se imprime un texto
+        imprimir_mensaje = false;
+      }
+
+      // Recibiendo la respuesta
+      while (Serial1.available() > 0) {
+        char caracter = Serial1.read();
+        temp_texto += caracter;
+      }
+      lcd.setCursor(0, 3);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+      lcd.print(">>" + temp_texto);  // Se imprime un texto
+      Serial.println(">>" + temp_texto);
+      
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
@@ -201,6 +226,30 @@ void loop() {
     } else if (entrada == "M") {  // Trabajando con la app movil
       Serial.println("ESTOY EN MOVIL");
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+      if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
+        lcd.clear();              // Se limpia el LCD
+        lcd.setCursor(0, 0);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");  // Se imprime un texto
+        lcd.setCursor(0, 1);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("usuario");     // Se imprime un texto
+        imprimir_mensaje = false;
+      } else if (imprimir_mensaje && strlen(temp_usuario.contrasenia) == 0) {
+        lcd.clear();               // Se limpia el LCD
+        lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");   // Se imprime un texto
+        lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("contrasenia");  // Se imprime un texto
+        imprimir_mensaje = false;
+      }
+
+      // Recibiendo la respuesta
+      while (Serial1.available() > 0) {
+        char caracter = Serial1.read();
+        temp_texto += caracter;
+      }
+      lcd.setCursor(0, 3);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+      lcd.print(">>" + temp_texto);  // Se imprime un texto
+      Serial.println(">>" + temp_texto);
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
