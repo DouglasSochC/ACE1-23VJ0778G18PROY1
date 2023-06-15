@@ -82,7 +82,7 @@ void setup() {
     mostrarUsuariosEEPROMConsola();
   }
 
-  EEPROM.get(sizeof(S_Inicial), temp_compartimientos); 
+  EEPROM.get(sizeof(S_Inicial), temp_compartimientos);
 }
 
 void loop() {
@@ -537,8 +537,6 @@ void loop() {
         lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
     }
-  } else if (estado_app == ELIMINACION_CUENTA) {
-    imprimirCompartimentos();
   }
 
   botonAceptar();
@@ -1013,7 +1011,31 @@ void botonAceptar() {
             estado_app = MENU_PRINCIPAL;
             temp_usuario = {};
           } else if (temp_texto == "4") {
-            estado_app = ELIMINACION_CUENTA;
+            int cantidad_compartimentos = 0;
+            for (int i = 0; i < 9; i++) {
+              if (strcmp(temp_compartimientos.compartimentos[i], temp_usuario.nombre) == 0) {
+                cantidad_compartimentos++;
+              }
+            }
+
+            if (cantidad_compartimentos > 0) {
+              lcd.clear();                   // Se limpia el LCD
+              lcd.setCursor(0, 0);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+              lcd.print("ERROR: El");        // Se imprime un texto
+              lcd.setCursor(0, 1);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+              lcd.print("usuario tiene");    // Se imprime un texto
+              lcd.setCursor(0, 2);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+              lcd.print("celulares en el");  // Se imprime un texto
+              lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+              lcd.print("sistema");          // Se imprime un texto
+              reiniciarVariableAuxiliares();
+              delay(500);
+              return;
+            } else {
+              eliminarUsuario(temp_usuario.nombre);
+              estado_app = MENU_PRINCIPAL;
+              temp_usuario = {};
+            }
           }
           reiniciarVariableAuxiliares();
         } else if (estado_app == INGRESO_CELULAR) {
