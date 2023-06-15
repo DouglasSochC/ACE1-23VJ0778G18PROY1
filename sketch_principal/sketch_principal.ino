@@ -12,6 +12,7 @@ byte Cpines[4] = { 26, 27, 28 };                                             // 
 Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // Mapeo de los valores que se obtienen a traves del teclado
 #define PIN_ACEPTAR 8                                                        // Pin para manejar la aceptacion de alguna accion
 #define PIN_CANCELAR 9                                                       // Pin para manejar la cancelacion de alguna accion
+#define PIN_REINICIAR 10                                                     // Pin para manejar el reinicio del EEPROM con el usuario administrador
 
 // Estados del programa
 #define SECUENCIA_INICIAL 0
@@ -44,9 +45,10 @@ void setup() {
   matriz_driver.setIntensity(0, 8);
   matriz_driver.clearDisplay(0);
 
-  // Reinicia el EEPROM cada vez que se ejecute el programa
-  if (true) {
-
+  // Servira para determinar si ya existe alguna estructura en la EEPROM
+  S_Inicial puntero;
+  EEPROM.get(0, puntero);
+  if (puntero.ini_libre == 0) {
     S_Inicial ini;
     ini.ini_libre = sizeof(S_Inicial);
     EEPROM.put(0, ini);
@@ -67,6 +69,8 @@ void setup() {
     strcpy(usu.num_celular, "12345678");
     strcpy(usu.admin, "0");
     guardarUsuario(usu);
+
+    mostrarUsuariosEEPROMConsola();
   }
 }
 
@@ -218,6 +222,7 @@ void loop() {
 
   botonAceptar();
   botonCancelar();
+  botonReiniciar();
   // char respuesta[2];
   // Serial3.print("L1"); // Se envia un comando al arduino secundario
   // Serial3.readBytes(respuesta, 2); // Se lee la respuesta del arduino secundario y se almacena en el char 'respuesta'
@@ -657,6 +662,33 @@ void botonCancelar() {
   ultimo_estado_boton_cancelar = btnCancelar;
 }
 
+// Reconoce el boton de reiniciar presionado
+bool estado_boton_reiniciar = false;
+bool ultimo_estado_boton_reiniciar = false;
+unsigned long ultimo_tiempo_rebote_boton_reiniciar = 0;
+const unsigned long delay_rebote_boton_reiniciar = 50;
+void botonReiniciar() {
+  int btnReiniciar = digitalRead(PIN_REINICIAR);
+
+  if (btnReiniciar != ultimo_estado_boton_reiniciar) {
+    ultimo_tiempo_rebote_boton_reiniciar = millis();
+  }
+
+  if ((millis() - ultimo_tiempo_rebote_boton_reiniciar) > delay_rebote_boton_reiniciar) {
+    if (btnReiniciar != estado_boton_reiniciar) {
+      estado_boton_reiniciar = btnReiniciar;
+
+      if (estado_boton_reiniciar == LOW) {
+        Serial.println("INICIANDO REINICIO");
+        resetearEEPROM();
+        Serial.println("REINICIO FINALIZADO");
+      }
+    }
+  }
+
+  ultimo_estado_boton_reiniciar = btnReiniciar;
+}
+
 /***********************************/
 /************** UTIL ***************/
 /***********************************/
@@ -745,6 +777,13 @@ void imprimirLetraMatrizConDriver() {
     for (int columna = 0; columna < 8; columna++) {
       matriz_driver.setLed(0, 7 - fila, columna, abecedario[indice_abecedario][fila][columna]);
     }
+  }
+}
+
+// Borra todos los datos que posee la EEPROM
+void resetearEEPROM() {
+  for (int i = 0; i < EEPROM.length(); i++) {
+    EEPROM.write(i, 0);
   }
 }
 
