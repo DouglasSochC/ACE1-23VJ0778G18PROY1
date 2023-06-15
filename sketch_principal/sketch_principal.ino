@@ -53,8 +53,10 @@ void setup() {
   EEPROM.get(0, puntero);
   if (puntero.ini_libre == 0) {
     S_Inicial ini;
-    ini.ini_libre = sizeof(S_Inicial);
+    S_Compartimientos ini_compartimentos;
+    ini.ini_libre = sizeof(S_Inicial) + sizeof(S_Compartimientos);
     EEPROM.put(0, ini);
+    EEPROM.put(sizeof(S_Inicial), ini_compartimentos);
 
     S_Usuario usu;
     strcpy(usu.nombre, "ADMIN*22922");
@@ -129,7 +131,7 @@ void loop() {
         reiniciarVariableAuxiliares();
       }
     } else if (entrada == "M") {  // Trabajando con la app movil
-      Serial.println("ESTOY EN MOVIL");
+
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
         lcd.clear();              // Se limpia el LCD
@@ -152,10 +154,9 @@ void loop() {
         char caracter = Serial1.read();
         temp_texto += caracter;
       }
-      lcd.setCursor(0, 3);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
       lcd.print(">>" + temp_texto);  // Se imprime un texto
-      Serial.println(">>" + temp_texto);
-      
+
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
@@ -224,7 +225,7 @@ void loop() {
         reiniciarVariableAuxiliares();
       }
     } else if (entrada == "M") {  // Trabajando con la app movil
-      Serial.println("ESTOY EN MOVIL");
+
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
         lcd.clear();              // Se limpia el LCD
@@ -247,9 +248,8 @@ void loop() {
         char caracter = Serial1.read();
         temp_texto += caracter;
       }
-      lcd.setCursor(0, 3);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
       lcd.print(">>" + temp_texto);  // Se imprime un texto
-      Serial.println(">>" + temp_texto);
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
@@ -291,6 +291,7 @@ void loop() {
 
   } else if (estado_app == MENU_USUARIO) {
 
+    imprimirCompartimentos();
     // Imprimiendo opciones disponibles
     if (imprimir_mensaje) {
       imprimirMenuUsuario();
@@ -309,25 +310,24 @@ void loop() {
 
   } else if (estado_app == MENU_ADMINISTRADOR) {
 
+    imprimirCompartimentos();
     // Imprimiendo opciones disponibles
     if (imprimir_mensaje) {
       imprimirMenuAdministrador();
       imprimir_mensaje = false;
     }
   } else if (estado_app == INGRESO_CELULAR) {
-    // Tercero - HAY QUE RECORDAR QUE EN LA MATRIZ LED SE DEBE DE MOSTRAR LOS OCUPADOS
+    imprimirCompartimentos();
   } else if (estado_app == RETIRO_CELULAR) {
-    // Cuarto
+    imprimirCompartimentos();
   } else if (estado_app == ELIMINACION_CUENTA) {
-    // Primero
+    imprimirCompartimentos();
   }
 
   botonAceptar();
   botonCancelar();
   botonReiniciar();
-  // char respuesta[2];
-  // Serial3.print("L1"); // Se envia un comando al arduino secundario
-  // Serial3.readBytes(respuesta, 2); // Se lee la respuesta del arduino secundario y se almacena en el char 'respuesta'
+  reconociendoSensores();
 }
 
 /***********************************/
@@ -874,6 +874,88 @@ void botonReiniciar() {
   }
 
   ultimo_estado_boton_reiniciar = btnReiniciar;
+}
+
+/***********************************/
+/************ SENSORES *************/
+/***********************************/
+
+// Imprime en la matriz la representacion de compartimentos
+void imprimirCompartimentos() {
+
+  // Dibujando las filas
+  for (int i = 0; i < 8; i++) {
+    matriz_driver.setLed(0, 2, i, 1);
+    matriz_driver.setLed(0, 5, i, 1);
+  }
+
+  // Dibujando las columnas
+  for (int i = 0; i < 8; i++) {
+    matriz_driver.setLed(0, i, 2, 1);
+    matriz_driver.setLed(0, i, 5, 1);
+  }
+
+  // Dibujar compartimentos ocupados
+  S_Compartimientos comp;
+  EEPROM.get(sizeof(S_Inicial), comp);
+  for (int i = 0; i < 9; i++) {
+    if (strlen(comp.compartimentos[i]) != 0) {
+      if (i == 0) {
+        matriz_driver.setLed(0, 7, 0, 1);
+        matriz_driver.setLed(0, 7, 1, 1);
+        matriz_driver.setLed(0, 6, 0, 1);
+        matriz_driver.setLed(0, 6, 1, 1);
+      } else if (i == 1) {
+        matriz_driver.setLed(0, 7, 3, 1);
+        matriz_driver.setLed(0, 7, 4, 1);
+        matriz_driver.setLed(0, 6, 3, 1);
+        matriz_driver.setLed(0, 6, 4, 1);
+      } else if (i == 2) {
+        matriz_driver.setLed(0, 7, 6, 1);
+        matriz_driver.setLed(0, 7, 7, 1);
+        matriz_driver.setLed(0, 6, 6, 1);
+        matriz_driver.setLed(0, 6, 7, 1);
+      } else if (i == 3) {
+        matriz_driver.setLed(0, 4, 0, 1);
+        matriz_driver.setLed(0, 4, 1, 1);
+        matriz_driver.setLed(0, 3, 0, 1);
+        matriz_driver.setLed(0, 3, 1, 1);
+      } else if (i == 4) {
+        matriz_driver.setLed(0, 4, 3, 1);
+        matriz_driver.setLed(0, 4, 4, 1);
+        matriz_driver.setLed(0, 3, 3, 1);
+        matriz_driver.setLed(0, 3, 4, 1);
+      } else if (i == 5) {
+        matriz_driver.setLed(0, 4, 6, 1);
+        matriz_driver.setLed(0, 4, 7, 1);
+        matriz_driver.setLed(0, 3, 6, 1);
+        matriz_driver.setLed(0, 3, 7, 1);
+      } else if (i == 6) {
+        matriz_driver.setLed(0, 1, 0, 1);
+        matriz_driver.setLed(0, 1, 1, 1);
+        matriz_driver.setLed(0, 0, 0, 1);
+        matriz_driver.setLed(0, 0, 1, 1);
+      } else if (i == 7) {
+        matriz_driver.setLed(0, 1, 3, 1);
+        matriz_driver.setLed(0, 1, 4, 1);
+        matriz_driver.setLed(0, 0, 3, 1);
+        matriz_driver.setLed(0, 0, 4, 1);
+      } else if (i == 8) {
+        matriz_driver.setLed(0, 1, 6, 1);
+        matriz_driver.setLed(0, 1, 7, 1);
+        matriz_driver.setLed(0, 0, 6, 1);
+        matriz_driver.setLed(0, 0, 7, 1);
+      }
+    }
+  }
+}
+
+// Se encarga de ir verificando el estado de todos los sensores
+void reconociendoSensores() {
+  // char res_serial3[2];
+  // Serial3.print("S1");
+  // Serial3.readBytes(res_serial3, 2); // Se lee la respuesta del arduino secundario y se almacena en el char 'respuesta'
+  // Serial.println(res_serial3);
 }
 
 /***********************************/
