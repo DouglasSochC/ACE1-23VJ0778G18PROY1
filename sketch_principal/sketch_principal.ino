@@ -66,7 +66,6 @@ void setup() {
 
     strcpy(usu.nombre, "B1");
     strcpy(usu.contrasenia, "B1");
-    strcpy(usu.num_celular, "12345678");
     strcpy(usu.admin, "0");
     guardarUsuario(usu);
 
@@ -200,9 +199,44 @@ void loop() {
       Serial.println("ESTOY EN MOVIL");
       // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
-      Serial.println("ESTOY EN PANEL DE OPERACION");
-      // Hay que recordar que al final de utilizar esta opcion hay que reiniciar la entrada a ""
+
+      if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
+        lcd.clear();              // Se limpia el LCD
+        lcd.setCursor(0, 0);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");  // Se imprime un texto
+        lcd.setCursor(0, 1);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("usuario");     // Se imprime un texto
+        imprimir_mensaje = false;
+      } else if (imprimir_mensaje && strlen(temp_usuario.contrasenia) == 0) {
+        lcd.clear();               // Se limpia el LCD
+        lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print("Ingrese su");   // Se imprime un texto
+        lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+        lcd.print("contrasenia");  // Se imprime un texto
+        imprimir_mensaje = false;
+      }
+
+      imprimirLetraMatrizConDriver();
+
+      // Interaccion atraves del panel de operacion
+      char llave = teclado.getKey();
+      if (llave != NO_KEY) {
+        if (llave == '*') {
+          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+        } else if (llave == '#') {
+          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+        } else if (llave == '0') {
+          char caracter = 65 + indice_abecedario;
+          temp_texto += caracter;
+        } else {
+          temp_texto += llave;
+        }
+
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
+      }
     }
+
   } else if (estado_app == MENU_USUARIO) {
 
     // Imprimiendo opciones disponibles
@@ -621,6 +655,68 @@ void botonAceptar() {
               estado_app = SECUENCIA_INICIAL;
             }
           }
+        } else if (estado_app == REGISTRO_USUARIO && (entrada == "P" || entrada == "M")) {
+          if (strlen(temp_usuario.nombre) == 0) {
+            strcpy(temp_usuario.nombre, temp_texto.c_str());
+            reiniciarVariableAuxiliares();
+          } else if (strlen(temp_usuario.contrasenia) == 0) {
+            strcpy(temp_usuario.contrasenia, temp_texto.c_str());
+            reiniciarVariableAuxiliares();
+          } else {
+
+            // Se valida el formato
+            bool res_usuario_formato = validarUsuario(temp_usuario.nombre);
+            bool res_contrasenia_formato = validarContrasenia(temp_usuario.contrasenia);
+
+            if (!res_usuario_formato) {
+              lcd.clear();               // Se limpia el LCD
+              lcd.setCursor(0, 0);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+              lcd.print("ERROR: El");    // Se imprime un texto
+              lcd.setCursor(0, 1);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+              lcd.print("formato del");  // Se imprime un texto
+              lcd.setCursor(0, 2);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+              lcd.print("usuario es");   // Se imprime un texto
+              lcd.setCursor(0, 3);       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+              lcd.print("incorrecto");   // Se imprime un texto
+              reiniciarVariableAuxiliares();
+              delay(500);
+            } else if (!res_contrasenia_formato) {
+              lcd.clear();                  // Se limpia el LCD
+              lcd.setCursor(0, 0);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+              lcd.print("ERROR: El");       // Se imprime un texto
+              lcd.setCursor(0, 1);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+              lcd.print("formato de la");   // Se imprime un texto
+              lcd.setCursor(0, 2);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+              lcd.print("contrasenia es");  // Se imprime un texto
+              lcd.setCursor(0, 3);          // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+              lcd.print("incorrecta");      // Se imprime un texto
+              reiniciarVariableAuxiliares();
+              delay(500);
+            } else {
+              // Se cifran los datos
+              cifrarDato(temp_usuario.nombre);
+              cifrarDato(temp_usuario.contrasenia);
+              bool res_usuario_existe = existenciaUsuario(temp_usuario.nombre);
+              if (res_usuario_existe) {
+                lcd.clear();              // Se limpia el LCD
+                lcd.setCursor(0, 0);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+                lcd.print("ERROR: El");   // Se imprime un texto
+                lcd.setCursor(0, 1);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+                lcd.print("usuario ya");  // Se imprime un texto
+                lcd.setCursor(0, 2);      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+                lcd.print("existe");      // Se imprime un texto
+                reiniciarVariableAuxiliares();
+                delay(500);
+              } else {
+                descifrarDato(temp_usuario.nombre);
+                descifrarDato(temp_usuario.contrasenia);
+                guardarUsuario(temp_usuario);
+                estado_app = MENU_PRINCIPAL;
+                entrada = "";
+              }
+            }
+            temp_usuario = {};
+          }
         }
       }
     }
@@ -647,6 +743,14 @@ void botonCancelar() {
 
       if (estado_boton_cancelar == LOW) {
         if (estado_app == INICIO_SESION && (entrada == "P" || entrada == "M")) {
+          if (strlen(temp_usuario.nombre) == 0) {
+            temp_texto = "";
+            reiniciarVariableAuxiliares();
+          } else if (strlen(temp_usuario.contrasenia) == 0) {
+            temp_texto = "";
+            reiniciarVariableAuxiliares();
+          }
+        } else if (estado_app == REGISTRO_USUARIO && (entrada == "P" || entrada == "M")) {
           if (strlen(temp_usuario.nombre) == 0) {
             temp_texto = "";
             reiniciarVariableAuxiliares();
@@ -788,7 +892,14 @@ void resetearEEPROM() {
 }
 
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9]+
-bool validarTexto(String texto) {
+bool validarUsuario(String texto) {
+
+  if (texto.length() < 8) {
+    return false;
+  } else if (texto.length() > 12) {
+    return false;
+  }
+
   for (int i = 0; i < texto.length(); i++) {
     char c = texto.charAt(i);
     if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) {
@@ -798,25 +909,37 @@ bool validarTexto(String texto) {
   return true;
 }
 
-// Valida que el texto cumpla con la siguiente expresion regular: [0-9]+
-bool validarNumeroTelefono(String texto) {
-  for (int i = 0; i < texto.length(); i++) {
-    char c = texto.charAt(i);
-    if (!(c >= '0' && c <= '9')) {
-      return false;
-    }
-  }
-  return true;
-}
-
 // Valida que el texto cumpla con la siguiente expresion regular: [A-Z0-9*#$!]+
 bool validarContrasenia(String texto) {
+
+  if (texto.length() < 8) {
+    return false;
+  } else if (texto.length() > 12) {
+    return false;
+  }
+
+  short cantidad_letra = 1;
+  short cantidad_numero = 1;
+  short cantidad_caracter_especial = 1;
+
   for (int i = 0; i < texto.length(); i++) {
     char c = texto.charAt(i);
     if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '*' || c == '#' || c == '$' || c == '!')) {
       return false;
     }
+    if (c >= 'A' && c <= 'Z') {
+      cantidad_letra--;
+    } else if (c >= '0' && c <= '9') {
+      cantidad_numero--;
+    } else if (c == '*' || c == '#' || c == '$' || c == '!') {
+      cantidad_caracter_especial--;
+    }
   }
+
+  if (cantidad_letra > 0 || cantidad_numero > 0 || cantidad_caracter_especial > 0) {
+    return false;
+  }
+
   return true;
 }
 
