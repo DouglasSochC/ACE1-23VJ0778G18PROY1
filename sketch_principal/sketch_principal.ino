@@ -21,7 +21,10 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 #define REGISTRO_USUARIO 3
 #define MENU_USUARIO 4
 #define MENU_ADMINISTRADOR 5
-int estado_app = MENU_PRINCIPAL;  // Indica el estado actual en el que esta el programa
+#define INGRESO_CELULAR 6
+#define RETIRO_CELULAR 7
+#define ELIMINACION_CUENTA 8
+int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
 #define CLAVE_1 '2'            // Representa el valor que sera utilizado para aplicar un XOR en la primera pasada
@@ -294,6 +297,16 @@ void loop() {
       imprimir_mensaje = false;
     }
 
+    // Interaccion atraves del panel de operacion
+    char llave = teclado.getKey();
+    if (llave != NO_KEY) {
+      temp_texto += llave;
+      lcd.setCursor(0, 3);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print("                ");  // Se limpia la ultima fila del LCD
+      lcd.setCursor(0, 3);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print(">>" + temp_texto);   // Se imprime un texto
+    }
+
   } else if (estado_app == MENU_ADMINISTRADOR) {
 
     // Imprimiendo opciones disponibles
@@ -301,6 +314,12 @@ void loop() {
       imprimirMenuAdministrador();
       imprimir_mensaje = false;
     }
+  } else if (estado_app == INGRESO_CELULAR) {
+    // Tercero - HAY QUE RECORDAR QUE EN LA MATRIZ LED SE DEBE DE MOSTRAR LOS OCUPADOS
+  } else if (estado_app == RETIRO_CELULAR) {
+    // Cuarto
+  } else if (estado_app == ELIMINACION_CUENTA) {
+    // Primero
   }
 
   botonAceptar();
@@ -762,10 +781,23 @@ void botonAceptar() {
                 guardarUsuario(temp_usuario);
                 estado_app = MENU_PRINCIPAL;
                 entrada = "";
+                reiniciarVariableAuxiliares();
               }
             }
             temp_usuario = {};
           }
+        } else if (estado_app == MENU_USUARIO) {
+          if (temp_texto == "1") {
+            estado_app = INGRESO_CELULAR;
+          } else if (temp_texto == "2") {
+            estado_app = RETIRO_CELULAR;
+          } else if (temp_texto == "3") {
+            estado_app = MENU_PRINCIPAL;
+            temp_usuario = {};
+          } else if (temp_texto == "4") {
+            estado_app = ELIMINACION_CUENTA;
+          }
+          reiniciarVariableAuxiliares();
         }
       }
     }
@@ -807,6 +839,8 @@ void botonCancelar() {
             temp_texto = "";
             reiniciarVariableAuxiliares();
           }
+        } else if (estado_app == MENU_USUARIO) {
+          reiniciarVariableAuxiliares();
         }
       }
     }
