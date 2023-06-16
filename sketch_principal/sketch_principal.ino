@@ -44,7 +44,7 @@ short intentos = 0;                                            // Almacena la ca
 bool temp_ingreso_celular[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };  // Almacena temporalmente las posiciones de ingreso de un celular en los compartimentos disponibles eso servira para el usuario logueado, 0 = abierto, 1 = cerrado
 short temp_calor[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };           // Almacena temporalmente la temperatura de cada sensor para que al momento de ingresar un celular se verifique alguna anomalia
 short temp_pos_retiro_celular = -1;                            // Almacena temporalmente la posicion en donde se retirara un celular
-short temp_pos_log = 1;
+short temp_pos_log = 0;
 
 void setup() {
 
@@ -638,7 +638,7 @@ void loop() {
           imprimir_mensaje = true;
         }
       } else if (llave == '2') {
-        if (temp_pos_log > 1) {
+        if (temp_pos_log > 0) {
           temp_pos_log--;
           imprimir_mensaje = true;
         }
@@ -945,7 +945,7 @@ void mostrarUsuariosEEPROMConsola() {
 // Se encarga de almacenar el log en el EEPROM
 void guardarLog(S_Log log_nuevo) {
 
-  int acum_id = 1;  // Servira para determinar automaticamente el id del log
+  int acum_id = 0;  // Servira para determinar automaticamente el id del log
   log_nuevo.id = acum_id;
   cifrarDato(log_nuevo.descripcion);
 
@@ -977,6 +977,10 @@ void guardarLog(S_Log log_nuevo) {
       pos_aux = log_aux.siguiente;
       EEPROM.get(log_aux.siguiente, log_aux);
       acum_id++;
+    }
+
+    if(acum_id >= 99){
+      return;
     }
 
     // Se modifica el puntero 'siguiente' del ultimo registro para que apunte al nuevo registro a ingresar
