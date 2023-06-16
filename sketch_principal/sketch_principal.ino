@@ -41,6 +41,7 @@ S_Compartimientos temp_compartimientos;                        // Es utilizado p
 short indice_abecedario = 0;                                   // Almacena la posicion actual de la letra a mostrar en la matriz led
 short intentos = 0;                                            // Almacena la cantidad de intentos que ha realizado el usuario para iniciar sesion
 bool temp_ingreso_celular[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };  // Almacena temporalmente las posiciones de ingreso de un celular en los compartimentos disponibles eso servira para el usuario logueado, 0 = abierto, 1 = cerrado
+short temp_calor[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };           // Almacena temporalmente la temperatura de cada sensor para que al momento de ingresar un celular se verifique alguna anomalia
 short temp_pos_retiro_celular = -1;                            // Almacena temporalmente la posicion en donde se retirara un celular
 short temp_pos_log = 1;
 
@@ -354,6 +355,8 @@ void loop() {
 
     // Se escucha cuales son las posiciones en los que el usuario ingreso su(s) celular(es)
     ingresoCelularSensor();
+    // Se reconoce el calor que tiene cada compartimento
+    reconociendoSensoresCalor();
 
   } else if (estado_app == INGRESO_CELULAR_ENTRADA) {
 
@@ -442,6 +445,8 @@ void loop() {
     imprimirCompartimentos();
     // Se escucha cuales son las posiciones en los que el usuario ingreso su(s) celular(es)
     ingresoCelularSensor();
+    // Se reconoce el calor que tiene cada compartimento
+    reconociendoSensoresCalor();
 
     // Imprimiendo opciones disponibles
     if (imprimir_mensaje) {
@@ -586,13 +591,11 @@ void loop() {
     }
 
   } else if (estado_app == ESTADO_SISTEMA) {
-    
   }
 
   botonAceptar();
   botonCancelar();
   botonReiniciar();
-  reconociendoSensoresCalor();
 }
 
 /***********************************/
@@ -1157,6 +1160,24 @@ void botonAceptar() {
             }
           }
 
+          // Se verifica que el compartimento este en optimas condiciones
+          for (int i = 0; i < 9; i++) {
+            if (temp_calor[i] < 50 || temp_calor[i] > 60) {
+              lcd.clear();                              // Se limpia el LCD
+              lcd.setCursor(0, 0);                      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+              lcd.print("ERROR: La pos.");              // Se imprime un texto
+              lcd.setCursor(0, 1);                      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+              lcd.print(String(i + 1) + " tiene una");  // Se imprime un texto
+              lcd.setCursor(0, 2);                      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+              lcd.print("anomalia con la");             // Se imprime un texto
+              lcd.setCursor(0, 3);                      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+              lcd.print("temperatura");                 // Se imprime un texto
+              reiniciarVariableAuxiliares();
+              delay(500);
+              return;
+            }
+          }
+
           estado_app = INGRESO_CELULAR_ENTRADA;
           entrada = "";
           reiniciarVariableAuxiliares();
@@ -1249,6 +1270,13 @@ void botonAceptar() {
                 delay(500);
                 return;
               }
+            }
+          }
+
+          // Se verifica que el compartimento este en optimas condiciones
+          for (int i = 0; i < 9; i++) {
+            if (temp_calor[i] < 50 || temp_calor[i] > 60) {
+              // ERROR DEBIDO HA QUE EXISTEN COMPARTIMENTOS CON ANOMALIAS
             }
           }
 
@@ -1521,22 +1549,31 @@ void reconociendoSensoresCalor() {
   // Reconociendo sensores
   Serial3.print("S1");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[0] = atoi(res_analogica);
   Serial3.print("S2");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[1] = atoi(res_analogica);
   Serial3.print("S3");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[2] = atoi(res_analogica);
   Serial3.print("S4");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[3] = atoi(res_analogica);
   Serial3.print("S5");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[4] = atoi(res_analogica);
   Serial3.print("S6");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[5] = atoi(res_analogica);
   Serial3.print("S7");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[6] = atoi(res_analogica);
   Serial3.print("S8");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[7] = atoi(res_analogica);
   Serial3.print("S9");
   Serial3.readBytes(res_analogica, 2);
+  temp_calor[8] = atoi(res_analogica);
 }
 
 /***********************************/
