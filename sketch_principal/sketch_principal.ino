@@ -28,6 +28,7 @@ Keypad teclado = Keypad(makeKeymap(valores_teclado), Fpines, Cpines, 4, 3);  // 
 #define RETIRO_CELULAR_ENTRADA 10
 #define LOGS 11
 #define ESTADO_SISTEMA 12
+#define ESTADO_SISTEMA_ENVIO 13
 int estado_app = SECUENCIA_INICIAL;  // Indica el estado actual en el que esta el programa
 
 // Util
@@ -192,11 +193,24 @@ void loop() {
       char llave = teclado.getKey();
       if (llave != NO_KEY) {
         if (llave == '*') {
-          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+          indice_abecedario = indice_abecedario == 0 ? 30 : indice_abecedario - 1;
         } else if (llave == '#') {
-          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+          indice_abecedario = indice_abecedario == 30 ? 0 : indice_abecedario + 1;
         } else if (llave == '0') {
-          char caracter = 65 + indice_abecedario;
+          char caracter;
+          if (indice_abecedario >= 0 && indice_abecedario < 26) {
+            caracter = 65 + indice_abecedario;
+          } else if (indice_abecedario == 26) {
+            caracter = 42;
+          } else if (indice_abecedario == 27) {
+            caracter = 35;
+          } else if (indice_abecedario == 28) {
+            caracter = 36;
+          } else if (indice_abecedario == 29) {
+            caracter = 33;
+          } else if (indice_abecedario == 30) {
+            caracter = 48;
+          }
           temp_texto += caracter;
         } else {
           temp_texto += llave;
@@ -285,11 +299,24 @@ void loop() {
       char llave = teclado.getKey();
       if (llave != NO_KEY) {
         if (llave == '*') {
-          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+          indice_abecedario = indice_abecedario == 0 ? 30 : indice_abecedario - 1;
         } else if (llave == '#') {
-          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+          indice_abecedario = indice_abecedario == 30 ? 0 : indice_abecedario + 1;
         } else if (llave == '0') {
-          char caracter = 65 + indice_abecedario;
+          char caracter;
+          if (indice_abecedario >= 0 && indice_abecedario < 26) {
+            caracter = 65 + indice_abecedario;
+          } else if (indice_abecedario == 26) {
+            caracter = 42;
+          } else if (indice_abecedario == 27) {
+            caracter = 35;
+          } else if (indice_abecedario == 28) {
+            caracter = 36;
+          } else if (indice_abecedario == 29) {
+            caracter = 33;
+          } else if (indice_abecedario == 30) {
+            caracter = 48;
+          }
           temp_texto += caracter;
         } else {
           temp_texto += llave;
@@ -424,11 +451,24 @@ void loop() {
       char llave = teclado.getKey();
       if (llave != NO_KEY) {
         if (llave == '*') {
-          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+          indice_abecedario = indice_abecedario == 0 ? 30 : indice_abecedario - 1;
         } else if (llave == '#') {
-          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+          indice_abecedario = indice_abecedario == 30 ? 0 : indice_abecedario + 1;
         } else if (llave == '0') {
-          char caracter = 65 + indice_abecedario;
+          char caracter;
+          if (indice_abecedario >= 0 && indice_abecedario < 26) {
+            caracter = 65 + indice_abecedario;
+          } else if (indice_abecedario == 26) {
+            caracter = 42;
+          } else if (indice_abecedario == 27) {
+            caracter = 35;
+          } else if (indice_abecedario == 28) {
+            caracter = 36;
+          } else if (indice_abecedario == 29) {
+            caracter = 33;
+          } else if (indice_abecedario == 30) {
+            caracter = 48;
+          }
           temp_texto += caracter;
         } else {
           temp_texto += llave;
@@ -540,11 +580,24 @@ void loop() {
       char llave = teclado.getKey();
       if (llave != NO_KEY) {
         if (llave == '*') {
-          indice_abecedario = indice_abecedario == 0 ? 26 : indice_abecedario - 1;
+          indice_abecedario = indice_abecedario == 0 ? 30 : indice_abecedario - 1;
         } else if (llave == '#') {
-          indice_abecedario = indice_abecedario == 26 ? 0 : indice_abecedario + 1;
+          indice_abecedario = indice_abecedario == 30 ? 0 : indice_abecedario + 1;
         } else if (llave == '0') {
-          char caracter = 65 + indice_abecedario;
+          char caracter;
+          if (indice_abecedario >= 0 && indice_abecedario < 26) {
+            caracter = 65 + indice_abecedario;
+          } else if (indice_abecedario == 26) {
+            caracter = 42;
+          } else if (indice_abecedario == 27) {
+            caracter = 35;
+          } else if (indice_abecedario == 28) {
+            caracter = 36;
+          } else if (indice_abecedario == 29) {
+            caracter = 33;
+          } else if (indice_abecedario == 30) {
+            caracter = 48;
+          }
           temp_texto += caracter;
         } else {
           temp_texto += llave;
@@ -591,6 +644,28 @@ void loop() {
     }
 
   } else if (estado_app == ESTADO_SISTEMA) {
+
+    if (imprimir_mensaje) {
+      imprimirConexionBluetooth();
+      imprimir_mensaje = false;
+    }
+
+    // Recibiendo la respuesta
+    if (Serial1.available() > 0) {
+      estado_app = ESTADO_SISTEMA_ENVIO;
+      reiniciarVariableAuxiliares();
+    }
+  } else if (estado_app == ESTADO_SISTEMA_ENVIO) {
+    if (imprimir_mensaje) {
+      lcd.clear();                    // Se limpia el LCD
+      lcd.setCursor(0, 0);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print("Presione aceptar");  // Se imprime un texto
+      lcd.setCursor(0, 1);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+      lcd.print("para enviar la");    // Se imprime un texto
+      lcd.setCursor(0, 1);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+      lcd.print("informacion");       // Se imprime un texto
+      imprimir_mensaje = false;
+    }
   }
 
   botonAceptar();
@@ -1013,6 +1088,7 @@ void botonAceptar() {
               reiniciarVariableAuxiliares();
               entrada = "";
               intentos = 0;
+              //msj_log: Login success
             } else {
               lcd.clear();                    // Se limpia el LCD
               lcd.setCursor(0, 0);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
@@ -1024,10 +1100,12 @@ void botonAceptar() {
               reiniciarVariableAuxiliares();
               temp_usuario = {};
               intentos++;
+              //msj_log: Login error
               delay(500);
             }
 
             if (intentos >= 2) {
+              //msj_log: Attemp log error
               delay(10000);
               intentos = 0;
               entrada = "";
@@ -1103,6 +1181,7 @@ void botonAceptar() {
           } else if (temp_texto == "2") {
             estado_app = RETIRO_CELULAR;
           } else if (temp_texto == "3") {
+            //msj_log: Sesion closed
             estado_app = MENU_PRINCIPAL;
             temp_usuario = {};
           } else if (temp_texto == "4") {
@@ -1124,9 +1203,11 @@ void botonAceptar() {
               lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
               lcd.print("sistema");          // Se imprime un texto
               reiniciarVariableAuxiliares();
+              //msj_log: Delete error
               delay(500);
               return;
             } else {
+              //msj_log: Delete success
               eliminarUsuario(temp_usuario.nombre);
               estado_app = MENU_PRINCIPAL;
               temp_usuario = {};
@@ -1154,6 +1235,7 @@ void botonAceptar() {
                 lcd.setCursor(0, 2);                       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
                 lcd.print("cerrada");                      // Se imprime un texto
                 reiniciarVariableAuxiliares();
+                //msj_log: Entry cel. error
                 delay(500);
                 return;
               }
@@ -1173,6 +1255,7 @@ void botonAceptar() {
               lcd.setCursor(0, 3);                      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
               lcd.print("temperatura");                 // Se imprime un texto
               reiniciarVariableAuxiliares();
+              //msj_log: Entry cel. error
               delay(500);
               return;
             }
@@ -1210,6 +1293,7 @@ void botonAceptar() {
             for (int i = 0; i < 9; i++) {
               temp_ingreso_celular[i] = false;
             }
+            //msj_log: Entry success
           } else {
 
             lcd.clear();               // Se limpia el LCD
@@ -1221,6 +1305,7 @@ void botonAceptar() {
             lcd.print("incorrecta");   // Se imprime un texto
             reiniciarVariableAuxiliares();
             intentos++;
+            //msj_log: Entry cel. error
             delay(500);
 
             if (intentos >= 2) {
@@ -1251,6 +1336,7 @@ void botonAceptar() {
             lcd.setCursor(0, 2);                     // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
             lcd.print("pertenece");                  // Se imprime un texto
             reiniciarVariableAuxiliares();
+            // msj_log: Out cel. error
             delay(500);
             return;
           }
@@ -1267,6 +1353,7 @@ void botonAceptar() {
                 lcd.setCursor(0, 2);                                  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
                 lcd.print("retirar el cel.");                         // Se imprime un texto
                 reiniciarVariableAuxiliares();
+                // msj_log: Out cel. error
                 delay(500);
                 return;
               }
@@ -1276,7 +1363,7 @@ void botonAceptar() {
           // Se verifica que el compartimento este en optimas condiciones
           for (int i = 0; i < 9; i++) {
             if (temp_calor[i] < 50 || temp_calor[i] > 60) {
-              // ERROR DEBIDO HA QUE EXISTEN COMPARTIMENTOS CON ANOMALIAS
+              // msj_log: Out cel. error
             }
           }
 
@@ -1315,6 +1402,7 @@ void botonAceptar() {
             for (int i = 0; i < 9; i++) {
               temp_ingreso_celular[i] = false;
             }
+            // msj_log: Out success
           } else {
 
             lcd.clear();               // Se limpia el LCD
@@ -1326,6 +1414,7 @@ void botonAceptar() {
             lcd.print("incorrecta");   // Se imprime un texto
             reiniciarVariableAuxiliares();
             intentos++;
+            // msj_log: Out cel. error
             delay(500);
 
             if (intentos >= 2) {
@@ -1335,6 +1424,8 @@ void botonAceptar() {
               estado_app = MENU_USUARIO;
             }
           }
+        } else if (estado_app == ESTADO_SISTEMA_ENVIO) {
+          // Se envia la información al bluetooth
         }
       }
     }
@@ -1378,6 +1469,8 @@ void botonCancelar() {
           }
         } else if (estado_app == MENU_USUARIO) {
           reiniciarVariableAuxiliares();
+        } else if (estado_app == MENU_ADMINISTRADOR) {
+          reiniciarVariableAuxiliares();
         } else if (estado_app == INGRESO_CELULAR_ENTRADA && (entrada == "P" || entrada == "M")) {
           temp_texto = "";
           reiniciarVariableAuxiliares();
@@ -1388,6 +1481,9 @@ void botonCancelar() {
           temp_texto = "";
           reiniciarVariableAuxiliares();
         } else if (estado_app == LOGS) {
+          estado_app = MENU_ADMINISTRADOR;
+          reiniciarVariableAuxiliares();
+        } else if (estado_app == ESTADO_SISTEMA_ENVIO) {
           estado_app = MENU_ADMINISTRADOR;
           reiniciarVariableAuxiliares();
         }
