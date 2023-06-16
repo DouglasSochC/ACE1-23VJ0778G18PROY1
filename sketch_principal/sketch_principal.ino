@@ -42,6 +42,7 @@ short indice_abecedario = 0;                                   // Almacena la po
 short intentos = 0;                                            // Almacena la cantidad de intentos que ha realizado el usuario para iniciar sesion
 bool temp_ingreso_celular[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };  // Almacena temporalmente las posiciones de ingreso de un celular en los compartimentos disponibles eso servira para el usuario logueado, 0 = abierto, 1 = cerrado
 short temp_pos_retiro_celular = -1;                            // Almacena temporalmente la posicion en donde se retirara un celular
+short temp_pos_log = 1;
 
 void setup() {
 
@@ -325,6 +326,15 @@ void loop() {
       imprimirMenuAdministrador();
       imprimir_mensaje = false;
     }
+
+    // Interaccion atraves del panel de operacion
+    char llave = teclado.getKey();
+    if (llave != NO_KEY) {
+      temp_texto += llave;
+      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print(">>" + temp_texto);  // Se imprime un texto
+    }
+
   } else if (estado_app == INGRESO_CELULAR) {
 
     // Se imprimen los compartimientos disponibles y ocupados
@@ -540,6 +550,40 @@ void loop() {
       }
     }
   } else if (estado_app == LOGS) {
+
+    if (imprimir_mensaje) {
+      String linea_1 = obtenerLog(temp_pos_log);
+      String linea_2 = obtenerLog(temp_pos_log + 1);
+      String linea_3 = obtenerLog(temp_pos_log + 2);
+      String linea_4 = obtenerLog(temp_pos_log + 3);
+      lcd.clear();          // Se limpia el LCD
+      lcd.setCursor(0, 0);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
+      lcd.print(linea_1);   // Se imprime un texto
+      lcd.setCursor(0, 1);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+      lcd.print(linea_2);   // Se imprime un texto
+      lcd.setCursor(0, 2);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
+      lcd.print(linea_3);   // Se imprime un texto
+      lcd.setCursor(0, 3);  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+      lcd.print(linea_4);   // Se imprime un texto
+      imprimir_mensaje = false;
+    }
+
+    // Selecciona alguna opcion del menu principal
+    char llave = teclado.getKey();
+    if (llave != NO_KEY) {
+      if (llave == '8') {
+        String aux = obtenerLog(temp_pos_log + 3);
+        if (aux.length() != 0) {
+          temp_pos_log++;
+          imprimir_mensaje = true;
+        }
+      } else if (llave == '2') {
+        if (temp_pos_log > 1) {
+          temp_pos_log--;
+          imprimir_mensaje = true;
+        }
+      }
+    }
 
   } else if (estado_app == ESTADO_SISTEMA) {
     
@@ -792,7 +836,7 @@ void mostrarUsuariosEEPROMConsola() {
 // Se encarga de almacenar el log en el EEPROM
 void guardarLog(S_Log log_nuevo) {
 
-  int acum_id = 1;    // Servira para determinar automaticamente el id del log
+  int acum_id = 1;  // Servira para determinar automaticamente el id del log
   log_nuevo.id = acum_id;
   cifrarDato(log_nuevo.descripcion);
 
@@ -839,6 +883,37 @@ void guardarLog(S_Log log_nuevo) {
     puntero.ini_libre += sizeof(S_Log);
     EEPROM.put(0, puntero);
   }
+}
+
+// Se encarga de retornar un log segun su posicion
+String obtenerLog(int posicion) {
+
+  S_Inicial puntero;  // Servira para leer los punteros existentes
+  S_Log log_aux;      // Servira para leer log x log en la memoria EEPROM
+
+  // Se obtiene la estructura que contiene la informacion del puntero
+  EEPROM.get(0, puntero);
+  // En el caso que no halla logs
+  if (puntero.ini_log == -1) {
+    return "";
+  }
+
+  int pos_actual = puntero.ini_log;
+  do {
+    // Se lee el registro
+    EEPROM.get(pos_actual, log_aux);
+
+    // Encuentra la posicion indicada
+    if (log_aux.id == posicion) {
+      descifrarDato(log_aux.descripcion);
+      return log_aux.descripcion;
+    }
+
+    // Se modifica la posicion actual para verificar el siguiente registro
+    pos_actual = log_aux.siguiente;
+
+  } while (log_aux.siguiente != -1);
+  return "";
 }
 
 // Muestra en consola todos los usuarios que estan registrados en el EEPROM
@@ -1053,6 +1128,13 @@ void botonAceptar() {
               estado_app = MENU_PRINCIPAL;
               temp_usuario = {};
             }
+          }
+          reiniciarVariableAuxiliares();
+        } else if (estado_app == MENU_ADMINISTRADOR) {
+          if (temp_texto == "1") {
+            estado_app = LOGS;
+          } else if (temp_texto == "2") {
+            estado_app = ESTADO_SISTEMA;
           }
           reiniciarVariableAuxiliares();
         } else if (estado_app == INGRESO_CELULAR) {
@@ -1276,6 +1358,9 @@ void botonCancelar() {
           reiniciarVariableAuxiliares();
         } else if (estado_app == RETIRO_CELULAR_ENTRADA && (entrada == "P" || entrada == "M")) {
           temp_texto = "";
+          reiniciarVariableAuxiliares();
+        } else if (estado_app == LOGS) {
+          estado_app = MENU_ADMINISTRADOR;
           reiniciarVariableAuxiliares();
         }
       }
