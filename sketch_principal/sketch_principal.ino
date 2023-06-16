@@ -140,6 +140,7 @@ void loop() {
       // Recibiendo la respuesta
       if (Serial1.available() > 0) {
         entrada = "M";
+        char caracter = Serial1.read();
         reiniciarVariableAuxiliares();
       }
     } else if (entrada == "M") {  // Trabajando con la app movil
@@ -165,9 +166,9 @@ void loop() {
       while (Serial1.available() > 0) {
         char caracter = Serial1.read();
         temp_texto += caracter;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
-      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
-      lcd.print(">>" + temp_texto);  // Se imprime un texto
 
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
@@ -247,6 +248,7 @@ void loop() {
       // Recibiendo la respuesta
       if (Serial1.available() > 0) {
         entrada = "M";
+        char caracter = Serial1.read();
         reiniciarVariableAuxiliares();
       }
     } else if (entrada == "M") {  // Trabajando con la app movil
@@ -272,10 +274,10 @@ void loop() {
       while (Serial1.available() > 0) {
         char caracter = Serial1.read();
         temp_texto += caracter;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
-      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
-      lcd.print(">>" + temp_texto);  // Se imprime un texto
-    } else if (entrada == "P") {     // Trabajando con el panel de operaciones
+    } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje && strlen(temp_usuario.nombre) == 0) {
         lcd.clear();              // Se limpia el LCD
@@ -412,6 +414,7 @@ void loop() {
       // Recibiendo la respuesta
       if (Serial1.available() > 0) {
         entrada = "M";
+        char caracter = Serial1.read();
         reiniciarVariableAuxiliares();
       }
     } else if (entrada == "M") {  // Trabajando con la app movil
@@ -430,10 +433,9 @@ void loop() {
       while (Serial1.available() > 0) {
         char caracter = Serial1.read();
         temp_texto += caracter;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
-      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
-      lcd.print(">>" + temp_texto);  // Se imprime un texto
-
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje) {
@@ -541,6 +543,7 @@ void loop() {
       // Recibiendo la respuesta
       if (Serial1.available() > 0) {
         entrada = "M";
+        char caracter = Serial1.read();
         reiniciarVariableAuxiliares();
       }
     } else if (entrada == "M") {  // Trabajando con la app movil
@@ -559,10 +562,9 @@ void loop() {
       while (Serial1.available() > 0) {
         char caracter = Serial1.read();
         temp_texto += caracter;
+        lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
+        lcd.print(">>" + temp_texto);  // Se imprime un texto
       }
-      lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
-      lcd.print(">>" + temp_texto);  // Se imprime un texto
-
     } else if (entrada == "P") {  // Trabajando con el panel de operaciones
 
       if (imprimir_mensaje) {
@@ -653,6 +655,7 @@ void loop() {
     // Recibiendo la respuesta
     if (Serial1.available() > 0) {
       estado_app = ESTADO_SISTEMA_ENVIO;
+      char caracter = Serial1.read();
       reiniciarVariableAuxiliares();
     }
   } else if (estado_app == ESTADO_SISTEMA_ENVIO) {
@@ -662,7 +665,7 @@ void loop() {
       lcd.print("Presione aceptar");  // Se imprime un texto
       lcd.setCursor(0, 1);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
       lcd.print("para enviar la");    // Se imprime un texto
-      lcd.setCursor(0, 1);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
+      lcd.setCursor(0, 2);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 1
       lcd.print("informacion");       // Se imprime un texto
       imprimir_mensaje = false;
     }
@@ -775,6 +778,34 @@ void eliminarUsuario(const char* nombre) {
     pos_actual = usu_actual.siguiente;
 
   } while (usu_actual.siguiente != -1);
+}
+
+// Retorna la cantidad de usuarios que hay en el sistema
+int cantidadUsuarios() {
+
+  S_Inicial puntero;  // Servira para leer los punteros existentes
+  S_Usuario usu_aux;  // Servira para leer log x log en la memoria EEPROM
+  int cantidad = 0;   // Servira para acumular la cantidad de logs
+
+  // Se obtiene la estructura que contiene la informacion del puntero
+  EEPROM.get(0, puntero);
+  // En el caso que no halla logs
+  if (puntero.ini_usuario == -1) {
+    return 0;
+  }
+
+  int pos_actual = puntero.ini_usuario;
+  do {
+    // Se lee el registro
+    EEPROM.get(pos_actual, usu_aux);
+    // Se cuenta el usuario
+    cantidad++;
+    // Se modifica la posicion actual para verificar el siguiente registro
+    pos_actual = usu_aux.siguiente;
+
+  } while (usu_aux.siguiente != -1);
+
+  return cantidad;
 }
 
 // Se encarga de verificar si existe un usuario con el mismo nombre en el EEPROM;
@@ -992,6 +1023,39 @@ String obtenerLog(int posicion) {
 
   } while (log_aux.siguiente != -1);
   return "";
+}
+
+// Se encarga de retornar la cantidad de logs que hay en la EEPROM segun la descripcion
+int obtenerCantidadLog(String descripcion) {
+
+  S_Inicial puntero;  // Servira para leer los punteros existentes
+  S_Log log_aux;      // Servira para leer log x log en la memoria EEPROM
+  int cantidad = 0;   // Servira para acumular la cantidad de logs
+  cifrarDato(descripcion.c_str());
+
+  // Se obtiene la estructura que contiene la informacion del puntero
+  EEPROM.get(0, puntero);
+  // En el caso que no halla logs
+  if (puntero.ini_log == -1) {
+    return 0;
+  }
+
+  int pos_actual = puntero.ini_log;
+  do {
+    // Se lee el registro
+    EEPROM.get(pos_actual, log_aux);
+
+    // Encuentra la posicion indicada
+    if (strcmp(log_aux.descripcion, descripcion.c_str()) == 0) {
+      cantidad++;
+    }
+
+    // Se modifica la posicion actual para verificar el siguiente registro
+    pos_actual = log_aux.siguiente;
+
+  } while (log_aux.siguiente != -1);
+
+  return cantidad;
 }
 
 // Muestra en consola todos los usuarios que estan registrados en el EEPROM
@@ -1213,7 +1277,7 @@ void botonAceptar() {
               reiniciarVariableAuxiliares();
               S_Log log;
               strcpy(log.descripcion, "Delete error");
-              guardarLog(log); 
+              guardarLog(log);
               delay(500);
               return;
             } else {
@@ -1311,7 +1375,7 @@ void botonAceptar() {
             }
             S_Log log;
             strcpy(log.descripcion, "Entry success");
-            guardarLog(log);            
+            guardarLog(log);
           } else {
 
             lcd.clear();               // Se limpia el LCD
@@ -1455,7 +1519,22 @@ void botonAceptar() {
             }
           }
         } else if (estado_app == ESTADO_SISTEMA_ENVIO) {
-          // Se envia la información al bluetooth
+
+          int cantidad_celulares_ingresados = 0;
+          int cantidad_global_intentos_fallidos = obtenerCantidadLog("Attemp log error");
+          int cantidad_incidentes = obtenerCantidadLog("Entry cel. error");
+          cantidad_incidentes += obtenerCantidadLog("Out cel. error");
+          int cantidad_usuarios_activo = cantidadUsuarios();
+          for (int i = 0; i < 9; i++) {
+            if (strlen(temp_compartimientos.compartimentos[i]) > 0) {
+              cantidad_celulares_ingresados++;
+            }
+          }
+
+          Serial1.println("Cantidad celulares ingresados: " + String(cantidad_celulares_ingresados));
+          Serial1.println("Cantidad global intentos fallidos: " + String(cantidad_global_intentos_fallidos));
+          Serial1.println("Cantidad de incidentes: " + String(cantidad_incidentes));
+          Serial1.println("Cantidad de usuarios activos: " + String(cantidad_usuarios_activo));
         }
       }
     }
