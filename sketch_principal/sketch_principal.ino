@@ -1088,7 +1088,9 @@ void botonAceptar() {
               reiniciarVariableAuxiliares();
               entrada = "";
               intentos = 0;
-              //msj_log: Login success
+              S_Log log;
+              strcpy(log.descripcion, "Login success");
+              guardarLog(log);
             } else {
               lcd.clear();                    // Se limpia el LCD
               lcd.setCursor(0, 0);            // Se agrega al cursor para empezar a escribir en columna = 0, fila = 0
@@ -1100,12 +1102,16 @@ void botonAceptar() {
               reiniciarVariableAuxiliares();
               temp_usuario = {};
               intentos++;
-              //msj_log: Login error
+              S_Log log;
+              strcpy(log.descripcion, "Login error");
+              guardarLog(log);
               delay(500);
             }
 
             if (intentos >= 2) {
-              //msj_log: Attemp log error
+              S_Log log;
+              strcpy(log.descripcion, "Attemp log error");
+              guardarLog(log);
               delay(10000);
               intentos = 0;
               entrada = "";
@@ -1181,7 +1187,9 @@ void botonAceptar() {
           } else if (temp_texto == "2") {
             estado_app = RETIRO_CELULAR;
           } else if (temp_texto == "3") {
-            //msj_log: Sesion closed
+            S_Log log;
+            strcpy(log.descripcion, "Sesion closed");
+            guardarLog(log);
             estado_app = MENU_PRINCIPAL;
             temp_usuario = {};
           } else if (temp_texto == "4") {
@@ -1203,11 +1211,15 @@ void botonAceptar() {
               lcd.setCursor(0, 3);           // Se agrega al cursor para empezar a escribir en columna = 0, fila = 3
               lcd.print("sistema");          // Se imprime un texto
               reiniciarVariableAuxiliares();
-              //msj_log: Delete error
+              S_Log log;
+              strcpy(log.descripcion, "Delete error");
+              guardarLog(log); 
               delay(500);
               return;
             } else {
-              //msj_log: Delete success
+              S_Log log;
+              strcpy(log.descripcion, "Delete success");
+              guardarLog(log);
               eliminarUsuario(temp_usuario.nombre);
               estado_app = MENU_PRINCIPAL;
               temp_usuario = {};
@@ -1235,7 +1247,9 @@ void botonAceptar() {
                 lcd.setCursor(0, 2);                       // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
                 lcd.print("cerrada");                      // Se imprime un texto
                 reiniciarVariableAuxiliares();
-                //msj_log: Entry cel. error
+                S_Log log;
+                strcpy(log.descripcion, "Entry cel. error");
+                guardarLog(log);
                 delay(500);
                 return;
               }
@@ -1255,7 +1269,9 @@ void botonAceptar() {
               lcd.setCursor(0, 3);                      // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
               lcd.print("temperatura");                 // Se imprime un texto
               reiniciarVariableAuxiliares();
-              //msj_log: Entry cel. error
+              S_Log log;
+              strcpy(log.descripcion, "Entry cel. error");
+              guardarLog(log);
               delay(500);
               return;
             }
@@ -1293,7 +1309,9 @@ void botonAceptar() {
             for (int i = 0; i < 9; i++) {
               temp_ingreso_celular[i] = false;
             }
-            //msj_log: Entry success
+            S_Log log;
+            strcpy(log.descripcion, "Entry success");
+            guardarLog(log);            
           } else {
 
             lcd.clear();               // Se limpia el LCD
@@ -1305,7 +1323,9 @@ void botonAceptar() {
             lcd.print("incorrecta");   // Se imprime un texto
             reiniciarVariableAuxiliares();
             intentos++;
-            //msj_log: Entry cel. error
+            S_Log log;
+            strcpy(log.descripcion, "Entry cel. error");
+            guardarLog(log);
             delay(500);
 
             if (intentos >= 2) {
@@ -1336,7 +1356,9 @@ void botonAceptar() {
             lcd.setCursor(0, 2);                     // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
             lcd.print("pertenece");                  // Se imprime un texto
             reiniciarVariableAuxiliares();
-            // msj_log: Out cel. error
+            S_Log log;
+            strcpy(log.descripcion, "Out cel. error");
+            guardarLog(log);
             delay(500);
             return;
           }
@@ -1353,7 +1375,9 @@ void botonAceptar() {
                 lcd.setCursor(0, 2);                                  // Se agrega al cursor para empezar a escribir en columna = 0, fila = 2
                 lcd.print("retirar el cel.");                         // Se imprime un texto
                 reiniciarVariableAuxiliares();
-                // msj_log: Out cel. error
+                S_Log log;
+                strcpy(log.descripcion, "Out cel. error");
+                guardarLog(log);
                 delay(500);
                 return;
               }
@@ -1363,7 +1387,9 @@ void botonAceptar() {
           // Se verifica que el compartimento este en optimas condiciones
           for (int i = 0; i < 9; i++) {
             if (temp_calor[i] < 50 || temp_calor[i] > 60) {
-              // msj_log: Out cel. error
+              S_Log log;
+              strcpy(log.descripcion, "Out cel. error");
+              guardarLog(log);
             }
           }
 
@@ -1402,7 +1428,9 @@ void botonAceptar() {
             for (int i = 0; i < 9; i++) {
               temp_ingreso_celular[i] = false;
             }
-            // msj_log: Out success
+            S_Log log;
+            strcpy(log.descripcion, "Out success");
+            guardarLog(log);
           } else {
 
             lcd.clear();               // Se limpia el LCD
@@ -1414,7 +1442,9 @@ void botonAceptar() {
             lcd.print("incorrecta");   // Se imprime un texto
             reiniciarVariableAuxiliares();
             intentos++;
-            // msj_log: Out cel. error
+            S_Log log;
+            strcpy(log.descripcion, "Out cel. error");
+            guardarLog(log);
             delay(500);
 
             if (intentos >= 2) {
