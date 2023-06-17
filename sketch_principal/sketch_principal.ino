@@ -1485,6 +1485,7 @@ void botonAceptar() {
                 strcpy(temp_comp.compartimentos[i], "");
               }
             }
+            matriz_driver.clearDisplay(0);
             temp_compartimientos = temp_comp;
             EEPROM.put(sizeof(S_Inicial), temp_comp);
 
