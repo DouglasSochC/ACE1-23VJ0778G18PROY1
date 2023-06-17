@@ -92,8 +92,8 @@ Se podrá registrar un nuevo usuario en el sistema. De manera secuencia, se le s
 ### Inicio de sesión
 El usuario o administrador podrá ingresar al sistema y realizar sus gestiones. Se le solicitará al usuario su nombre y contraseña. El sistema verificará los datos. De ser correctos se le dará acceso al menú que le corresponda al usuario. De lo contrario se le dará una oportunidad más. Si el usuario llegase a fallar nuevamente el sistema se bloqueará por 10 segundos y volverá a la secuencia inicial pasado ese tiempo.
 
-![Descripción de la imagen](/Img/1.png "Inicio")
-![Descripción de la imagen](/Img/2.png "Menu de operaciones")
+![Descripción de la imagen](/Documentacion/Img/1.png "Inicio")
+![Descripción de la imagen](/Documentacion/Img/2.png "Menu de operaciones")
 ### Menú de Usuarios
 Al iniciar sesión se presentará en la pantalla LCD del panel de operación un menú que tendrá opciones para: 
 - ingreso de celulares
@@ -106,12 +106,12 @@ Al iniciar sesión se presentará en la pantalla LCD del panel de operación un 
 Cuando el usuario se encuentre regitrado podrá tener más de un discpositivo dentro del sistema, la única condición que existe para poder ingresar uno nuevo es que hayan espacios disponibles.
 Para un nuevo ingreso el sistema elegirá automáticamente el primer compartimento vacío que encuentre y sera ese el que usará el usuario. 
 
-![Descripción de la imagen](/img/3.png "Ingreso y retiro de celular")
+![Descripción de la imagen](/Documentacion/Img/3.png "Ingreso y retiro de celular")
 
 ### Cerrar sesión
 El usuario podrá cerrar su sesión por medio de esta opción o, automáticamente, la sesión se cerrará luego de 5 minutos de inactividad. 
 
-![Descripción de la imagen](/img/4.png "Cerrar sesión")
+![Descripción de la imagen](/Documentacion/Img/4.png "Cerrar sesión")
 
 ### Eliminación de cuenta
 Con esta opción el usuario podrá darse de baja del sistema. De ser ese el caso, luego de
@@ -140,5 +140,5 @@ Los eventos que se deberán insertar en la memoria son:
 El administrador podrá consultar una serie de datos relevantes al sistema. Antes de ingresar a esta sección se deberá asegurar una conexión Bluetooth con un dispositivo con la aplicación móvil. Una vez hecho esto, se podrá proceder a mostrar los datos solicitados en la
 pantalla LCD, de forma secuencial, y en la aplicación móvil. 
 
-![Descripción de la imagen](/img/6.jpeg "Estados del Sistema")
-![Descripción de la imagen](/img/5.png "Estados del Sistema")
+![Descripción de la imagen](/Documentacion/Img/6.jpeg "Estados del Sistema")
+![Descripción de la imagen](/Documentacion/Img/5.png "Estados del Sistema")
